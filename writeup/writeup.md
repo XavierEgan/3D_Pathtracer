@@ -11,6 +11,12 @@ $\overrightarrow{C_P} =$ Cameras position in global space,
 $O =$ The global origin,
 $l =$ Cameras focal length
 
+For my sake, the camera has no rotation. Insted the forward vector is given and $\overrightarrow{C_U}$ and $\overrightarrow{C_R}$ are calculated. This also means we cannot roll the camera. To calculate them given $\overrightarrow{C_F}$ is as follows:
+$$
+\overrightarrow{C_R}\text{ Is the vector pointing right from }\overrightarrow{C_F}
+
+$$
+
 Suppose a vector $\overrightarrow{P_O}$ which goes from $O$ to the point $l$ units from $\overrightarrow{C_P}$, this can be calculated as follows:
 $$
 \overrightarrow{P_O} = \overrightarrow{C_P} + \overrightarrow{C_F}\cdot l

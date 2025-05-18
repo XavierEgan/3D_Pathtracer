@@ -40,9 +40,20 @@ Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
     }
 }
 
+
+
 void render(Camera cam, Mesh* meshs, int num_meshs, char* filename) {
     // construct list of all triangles for efficient memory access
     Render_Tri_Buffer tri_buffer = get_tris(meshs, num_meshs);
 
-    
+    float vertical_half_scale = tan(cam.height_fov) * cam.focal_length;
+    float horizontal_half_scale = tan(cam.height_fov) * cam.focal_length;
+
+    Vec3 I00 = vertical_half_scale * cam.up
+
+    for (unsigned int y=0; y<cam.height_pixels; y++) {
+        for (unsigned int x=0; x<cam.width_pixels; x++) {
+
+        }
+    }
 }

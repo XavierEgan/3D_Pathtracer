@@ -18,8 +18,6 @@ typedef struct {
     unsigned long long num_tris; // may be smaller than tris
 } Render_Tri_Buffer;
 
-int render_tri(Tri tri);
-
 void render(Camera cam, Mesh* meshs, int num_meshs, char* filename);
 
 #endif
