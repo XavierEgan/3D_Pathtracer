@@ -1,4 +1,5 @@
 #include "Tri.h"
+#include "Vec3.h"
 
 #define epsilon 0.0000001f
 
@@ -48,5 +49,3 @@ Vec3 tri_normal (Tri tri) {
         )
     );
 }
-
-

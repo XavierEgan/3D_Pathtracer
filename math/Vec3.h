@@ -21,7 +21,7 @@ Vec3 vec_cross(Vec3 a, Vec3 b);
 
 Vec3 vec_normalise(Vec3 a);
 
-inline float vec_dot(Vec3 a, Vec3 b);
+float vec_dot(Vec3 a, Vec3 b);
 
 float vec_len(Vec3 a);
 

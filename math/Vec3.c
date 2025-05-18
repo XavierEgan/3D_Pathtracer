@@ -51,7 +51,7 @@ Vec3 vec_normalise(Vec3 a) {
     return vec_scale(a, 1.0f/len);
 }
 
-inline float vec_dot(Vec3 a, Vec3 b) {
+float vec_dot(Vec3 a, Vec3 b) {
     return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
