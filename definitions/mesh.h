@@ -11,12 +11,14 @@ typedef struct {
     Tri* tris;
     Vec3* normals;
     Color color;
+    int reflective;
+    int emmisive;
 } Mesh;
 
 // takes ownership of tris
-Mesh init_mesh(unsigned int num_tris, Tri* tris, Color color);
+Mesh init_mesh(unsigned int num_tris, Tri* tris, Color color, int reflective, int emmisive);
 
-Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max);
+Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max, int reflective, int emmisive);
 
 void free_mesh(Mesh mesh);
 

@@ -16,7 +16,9 @@ int main(void) {
     Mesh meshs[] = {mesh1, mesh2, mesh3};
     unsigned int num_meshs = 3;
 
-    Camera cam = init_camera(1, 1280, 720, 256, (Vec3){0, -10, 0}, (Vec3){1, 0, 0});
+    Camera cam = init_camera(1, 1280, 720, 120, 90, 256, (Vec3){0, -10, 0}, (Vec3){1, 0, 0});
 
     render(cam, meshs, num_meshs, "test");
+
+    
 }

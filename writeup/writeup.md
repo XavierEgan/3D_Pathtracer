@@ -1,6 +1,6 @@
 # 3d Raytracer
 ## Section 1 - Rayracing
-### Making the rays
+### Finding local Camera
 (I got the idea for this from a friend describing how he implimented his 3d renderer from a math writeup)
 
 Let:  
@@ -11,10 +11,16 @@ $\overrightarrow{C_P} =$ Cameras position in global space,
 $O =$ The global origin,
 $l =$ Cameras focal length
 
-For my sake, the camera has no rotation. Insted the forward vector is given and $\overrightarrow{C_U}$ and $\overrightarrow{C_R}$ are calculated. This also means we cannot roll the camera. To calculate them given $\overrightarrow{C_F}$ is as follows:
+For my sake, the cameras rotation is defined by its forward vector, then $\overrightarrow{C_U}$ and $\overrightarrow{C_R}$ are calculated. This also means we cannot roll the camera. To calculate them given $\overrightarrow{C_F}$ is as follows:
 $$
-\overrightarrow{C_R}\text{ Is the vector pointing right from }\overrightarrow{C_F}
-
+\overrightarrow{C_R}.\overrightarrow{C_F}=0\\
+\text{Since }\overrightarrow{C_R}\text{ has no y component we can find it by crossing }\overrightarrow{C_F}\text{ and }\overrightarrow{C_F}-\overrightarrow{j}\\
+\text{Hence: } \overrightarrow{C_R} = \overrightarrow{C_F}\times (\overrightarrow{C_F}-\overrightarrow{j})\\
+\overrightarrow{C_U} = \overrightarrow{C_R}\times \overrightarrow{C_F}\\
+\text{These need to be normalised:}\\
+\overrightarrow{C_F} = \frac{\overrightarrow{C_F}}{|\overrightarrow{C_F}|}\quad
+\overrightarrow{C_R} = \frac{\overrightarrow{C_R}}{|\overrightarrow{C_R}|}\quad
+\overrightarrow{C_U} = \frac{\overrightarrow{C_U}}{|\overrightarrow{C_U}|}
 $$
 
 Suppose a vector $\overrightarrow{P_O}$ which goes from $O$ to the point $l$ units from $\overrightarrow{C_P}$, this can be calculated as follows:

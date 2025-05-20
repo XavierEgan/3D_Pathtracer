@@ -11,6 +11,8 @@
 typedef struct {
     Tri tri;
     Color color;
+    int reflective;
+    int emmisive;
 } Render_Tri;
 
 typedef struct {
@@ -18,6 +20,6 @@ typedef struct {
     unsigned long long num_tris; // may be smaller than tris
 } Render_Tri_Buffer;
 
-void render(Camera cam, Mesh* meshs, int num_meshs, char* filename);
+void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename);
 
 #endif

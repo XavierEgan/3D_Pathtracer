@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "render.h"
+
+typedef struct {
+    Vec3 I00
+} viewplane;
 
 int render_tri(Tri tri) {
     return 1; // will be properly implimented later
@@ -40,20 +45,36 @@ Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
     }
 }
 
+Vec3 get_next_ray() {
 
+}
 
-void render(Camera cam, Mesh* meshs, int num_meshs, char* filename) {
+void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     // construct list of all triangles for efficient memory access
     Render_Tri_Buffer tri_buffer = get_tris(meshs, num_meshs);
 
     float vertical_half_scale = tan(cam.height_fov) * cam.focal_length;
     float horizontal_half_scale = tan(cam.height_fov) * cam.focal_length;
 
-    Vec3 I00 = vertical_half_scale * cam.up
+    Vec3 plane_offset = vec_add(cam.pos, vec_scale(cam.forward, cam.focal_length));
+
+    Vec3 I00 = vec_add(vec_scale(cam.up, -vertical_half_scale), vec_scale(cam.right, -horizontal_half_scale));
+    Vec3 I10 = vec_add(vec_scale(cam.up, vertical_half_scale), vec_scale(cam.right, -horizontal_half_scale));
+    Vec3 I01 = vec_add(vec_scale(cam.up, -vertical_half_scale), vec_scale(cam.right, horizontal_half_scale));
+    Vec3 I11 = vec_add(vec_scale(cam.up, vertical_half_scale), vec_scale(cam.right, horizontal_half_scale));
+
+    
 
     for (unsigned int y=0; y<cam.height_pixels; y++) {
         for (unsigned int x=0; x<cam.width_pixels; x++) {
-
+            Vec3 closest_intersec = {0.0f, 0.0f, 0.0f};
+            Vec3 cur_intersec = {0.0f, 0.0f, 0.0f};
+            Vec3 ray;
+            for (unsigned int t=0; t<tri_buffer.num_tris; t++) {
+                if (ray_triangle_intercept(ray, cam.pos, cur_intersec)) {
+                    if (dist_bet_points(cam.pos, cur_intersec))
+                }
+            }
         }
     }
 }
