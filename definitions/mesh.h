@@ -9,7 +9,6 @@
 typedef struct {
     unsigned int num_tris;
     Tri* tris;
-    Vec3* normals;
     Color color;
     int reflective;
     int emmisive;

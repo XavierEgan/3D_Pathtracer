@@ -11,6 +11,7 @@
 typedef struct {
     Tri tri;
     Color color;
+    Vec3 normal;
     int reflective;
     int emmisive;
 } Render_Tri;

@@ -10,9 +10,9 @@
 #include "render.h"
 
 int main(void) {
-    Mesh mesh1 = init_random_mesh(100, (Color){255,255,255}, -2, 2);
-    Mesh mesh2 = init_random_mesh(100, (Color){255,255,255}, -2, 2);
-    Mesh mesh3 = init_random_mesh(100, (Color){255,255,255}, -2, 2);
+    Mesh mesh1 = init_random_mesh(100, (Color){255,255,255}, -2, 2, 1, 0);
+    Mesh mesh2 = init_random_mesh(100, (Color){255,255,255}, -2, 2, 0, 1);
+    Mesh mesh3 = init_random_mesh(100, (Color){255,255,255}, -2, 2, 0, 0);
     Mesh meshs[] = {mesh1, mesh2, mesh3};
     unsigned int num_meshs = 3;
 
