@@ -4,6 +4,12 @@
 
 #include "render.h"
 
+typedef struct {
+    Color* data;
+    unsigned int width;
+    unsigned int height;
+} Frame_Buffer;
+
 int render_tri(Tri tri) {
     return 1; // will be properly implimented later
 }
@@ -41,22 +47,43 @@ Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
     }
 }
 
-Vec3 get_next_ray() {
+Color trace_ray(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, int num_bounces) {
 
 }
 
 void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
+    // alloc a frame buffer to write to
+    Color* data = malloc(sizeof(Color) * cam.height_pixels * cam.width_pixels);
+    Frame_Buffer buffer = {data, cam.width_pixels, cam.height_pixels};
+
     // construct list of all triangles for efficient memory access
     Render_Tri_Buffer tri_buffer = get_tris(meshs, num_meshs);
 
     float vertical_half_scale = tan(cam.height_fov) * cam.focal_length;
     float horizontal_half_scale = tan(cam.height_fov) * cam.focal_length;
 
-    Vec3 plane_offset = vec_add(cam.pos, vec_scale(cam.forward, cam.focal_length));
+    float px_height = (vertical_half_scale*2.0f)/cam.height_pixels;
+    float px_width = (horizontal_half_scale*2.0f)/cam.width_pixels;
+
+    float plane_x = -horizontal_half_scale;
+    float plane_y = vertical_half_scale;
+
+    Vec3 ray;
+    Color pixel_color;
 
     for (unsigned int y=0; y<cam.height_pixels; y++) {
         for (unsigned int x=0; x<cam.width_pixels; x++) {
-            
+            // get the next ray to trace
+            ray = vec_add(vec_add(vec_scale(cam.up, plane_y), vec_scale(cam.right, plane_x)), vec_scale(cam.forward, cam.focal_length));
+
+            // trace the ray
+            pixel_color = trace_ray(ray, cam.pos, tri_buffer, cam.num_bounces);
+
+            // write pixel to buffer
+            buffer.data[y*cam.width_pixels + x] = pixel_color;
+
+            plane_x += px_width;
         }
+        plane_y += px_height;
     }
 }
