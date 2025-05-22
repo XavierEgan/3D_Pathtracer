@@ -6,7 +6,7 @@ Camera init_camera(float focal_length, int width_pixels, int height_pixels, floa
     forward = vec_normalise(forward);
 
     // right is the cross product of forward and forward but moved down a lil bit (there is no roll which is why we can do this)
-    Vec3 right = vec_normalise(vec_cross(forward, vec_sub(forward, {0,1,0})));
+    Vec3 right = vec_normalise(vec_cross(forward, vec_sub(forward, (Vec3){0,1,0})));
 
     Vec3 up = vec_normalise(vec_cross(right, forward));
 

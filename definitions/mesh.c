@@ -5,8 +5,8 @@
 #include "color.h"
 
 // takes ownership of tris
-Mesh init_mesh(unsigned int num_tris, Tri* tris, Color color) {
-    Mesh mesh = {num_tris, tris, color};
+Mesh init_mesh(unsigned int num_tris, Tri* tris, Color color, int reflective, int emmisive) {
+    Mesh mesh = {num_tris, tris, color, reflective, emmisive};
 
     return mesh;
 }
@@ -15,8 +15,8 @@ float randbetween(float min, float max) {
     return min + (rand()/(float)RAND_MAX) * (max - min);
 }
 
-Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max) {
-    Mesh mesh = {num_tris, NULL, color};
+Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max, int reflective, int emmisive) {
+    Mesh mesh = {num_tris, NULL, color, reflective, emmisive};
 
     Tri* tris = malloc(sizeof(Tri) * num_tris);
     if (!tris) {

@@ -18,7 +18,7 @@ typedef struct {
 
 typedef struct {
     Render_Tri* tris;
-    unsigned long long num_tris; // may be smaller than tris
+    unsigned long num_tris; // may be smaller than tris
 } Render_Tri_Buffer;
 
 void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename);

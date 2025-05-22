@@ -3,10 +3,10 @@ CC = gcc
 CFLAGS = -Wall -g -mavx
 
 # Target executable
-TARGET = 3d_raytracer
+TARGET = d
 
 # Source and object files
-SRCS = main.c render.c \
+SRCS = main.c render.c fancy_loading_bar.c\
 	math/Tri.c math/Vec3.c \
 	definitions/camera.c definitions/framebuffer.c definitions/mesh.c
 

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Framebuffer init_buffer(unsigned long long buffer_len) {
+Framebuffer init_buffer(unsigned long buffer_len) {
     Framebuffer frame_buffer = {NULL, buffer_len};
 
     Color* buffer = malloc(sizeof(Color) * buffer_len);

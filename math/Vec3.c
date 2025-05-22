@@ -70,7 +70,7 @@ float vec_len(Vec3 a) {
 }
 
 double dist_bet_points(Vec3 p1, Vec3 p2) {
-    return len(vec_sub(p2, p1));
+    return vec_len(vec_sub(p2, p1));
 }
 
 Vec3 vec_project(Vec3 on, Vec3 vec) {

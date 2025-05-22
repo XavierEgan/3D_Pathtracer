@@ -7,7 +7,7 @@ typedef struct {
     unsigned long long buffer_len;
 } Framebuffer;
 
-Framebuffer init_buffer(unsigned long long buffer_len);
+Framebuffer init_buffer(unsigned long buffer_len);
 
 void free_buffer(Framebuffer* buffer);
 

@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <math.h>
 
 #include "render.h"
+#include "fancy_loading_bar.h"
 
 typedef struct {
     Color* data;
@@ -16,7 +18,7 @@ int render_tri(Tri tri) {
 
 Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
     // first, how many tris do we have?
-    unsigned long long num_tris = 0;
+    unsigned long num_tris = 0;
     for (unsigned int m=0; m<num_meshs; m++) {
         num_tris += meshs[m].num_tris;
     }
@@ -45,10 +47,7 @@ Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
             true_num_tris++;
         }
     }
-}
-
-Color trace_ray(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, int num_bounces) {
-
+    return (Render_Tri_Buffer){tris, num_tris};
 }
 
 void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
@@ -59,31 +58,85 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     // construct list of all triangles for efficient memory access
     Render_Tri_Buffer tri_buffer = get_tris(meshs, num_meshs);
 
+    // position on the plane of the corners
     float vertical_half_scale = tan(cam.height_fov) * cam.focal_length;
-    float horizontal_half_scale = tan(cam.height_fov) * cam.focal_length;
+    float horizontal_half_scale = tan(cam.width_fov) * cam.focal_length;
 
+    // height of a specifc pixel
     float px_height = (vertical_half_scale*2.0f)/cam.height_pixels;
     float px_width = (horizontal_half_scale*2.0f)/cam.width_pixels;
 
+    // starting position on the screen (then we sweep across)
     float plane_x = -horizontal_half_scale;
     float plane_y = vertical_half_scale;
 
-    Vec3 ray;
     Color pixel_color;
+
+    float rand_x_off;
+    float rand_y_off;
+
+    float inv_max_rand = 1.0f/RAND_MAX;
+
+    Vec3 ray;
+
+    Vec3 cur_intersec;
+    float cur_dist;
+    Vec3 closest_intersec;
+    float closest_dist;
+    Render_Tri closest_tri;
+    int has_intersec;
+
+    start_loading_bar(cam);
 
     for (unsigned int y=0; y<cam.height_pixels; y++) {
         for (unsigned int x=0; x<cam.width_pixels; x++) {
-            // get the next ray to trace
-            ray = vec_add(vec_add(vec_scale(cam.up, plane_y), vec_scale(cam.right, plane_x)), vec_scale(cam.forward, cam.focal_length));
+            for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
+                rand_x_off = rand() * inv_max_rand * px_width;
+                rand_y_off = rand() * inv_max_rand * px_height;
+                // ray = (pos + forward*focal_len) + (right*(horizontal_half_scale + rand_x_off) + up*(vertical_half_scale + rand_y_off))
+                ray = vec_add(
+                    vec_add(cam.pos, vec_scale(cam.forward, cam.focal_length)), // +
+                    vec_add(
+                        vec_scale(cam.right, horizontal_half_scale + rand_x_off), 
+                        vec_scale(cam.up, vertical_half_scale + rand_y_off))
+                );
 
-            // trace the ray
-            pixel_color = trace_ray(ray, cam.pos, tri_buffer, cam.num_bounces);
+                int count_bounces = 0;
+                for (unsigned int rt=0; rt<cam.num_bounces; rt++) {
+                    has_intersec = 0;
+                    // check if the ray intersecs any triangles
+                    for (unsigned int t=0; t<tri_buffer.num_tris; t++) {
+                        // check if the ray intersects the triangle
+                        if (!ray_triangle_intercept(ray, cam.pos, tri_buffer.tris[t].tri, &cur_intersec)) {
+                            continue;
+                        }
 
-            // write pixel to buffer
-            buffer.data[y*cam.width_pixels + x] = pixel_color;
+                        // there is at least one intersec
+                        has_intersec = 1;
 
+                        // get the distance from cam to the point
+                        cur_dist = dist_bet_points(cur_intersec, cam.pos);
+
+                        // check if its the closest intersec so far
+                        if (cur_dist < closest_dist) {
+                            closest_dist = cur_dist;
+                            closest_intersec = cur_intersec;
+                            closest_tri = tri_buffer.tris[t];
+                        }
+                    }
+
+                    if (!has_intersec) {
+                        continue;
+                    }
+                    
+                }
+
+            }
             plane_x += px_width;
+
+            update_loading_bar(cam.rays_per_pixel, 1);
         }
         plane_y += px_height;
+        plane_x = -horizontal_half_scale;
     }
 }
