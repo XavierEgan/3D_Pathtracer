@@ -8,6 +8,8 @@
 #include "definitions/camera.h"
 #include "definitions/mesh.h"
 
+void render_loading_bar();
+
 const int loading_bar_width = 20;
 
 uint64_t est_pixels_total;
