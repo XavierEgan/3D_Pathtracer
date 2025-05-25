@@ -21,6 +21,4 @@ Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max, 
 
 void free_mesh(Mesh mesh);
 
-void recompute_norms(Mesh* mesh);
-
 #endif

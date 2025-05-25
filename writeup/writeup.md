@@ -121,6 +121,11 @@ int ray_triangle_intercept(Vec3 ray, Vec3 ray_origin, Tri tri, Vec3* int_pos) {
 }
 ```
 
+## optimising
+optimizations to make:
+BVHT Bounding Volue Heirarchy Tree (bin tree of bounding boxes to reduce checks)
+Monte carlo pixel rejection ( if strategic points are all nothing, then the whole pixel is nothing.)
+SIMD optimized checks (do 4 in paralel)
 
 
 ## The Graveyard

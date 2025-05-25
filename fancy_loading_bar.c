@@ -56,7 +56,7 @@ void render_loading_bar() {
 
     float elapsed_time = (float)(clock() - start) / CLOCKS_PER_SEC;
 
-    printf("\033[HRendering [%s] %0.1f%%\n%d/%d pixels rendered\n%d/%d rays traced\ntime elapsed: %0.3fs\nest time remaining: %0.1fh                                      \n                                      ", 
+    printf("\033[HRendering [%s] %0.1f%%\n%ld/%ld pixels rendered\n%ld/%ld rays traced\ntime elapsed: %0.3fs\nest time remaining: %0.1fh                                      \n                                      ", 
         bar,
         percent*100,
         pixels_so_far, est_pixels_total,
