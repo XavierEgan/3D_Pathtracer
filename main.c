@@ -9,7 +9,7 @@
 #include "definitions/mesh.h"
 #include "render.h"
 
-int main(void) {
+int main1(void) {
     Vec3 
     tlfc, blfc,
     tlbc, blbc,
@@ -60,7 +60,7 @@ int main(void) {
 }
 
 
-int main1(void) {
+int main(void) {
     Mesh mesh1 = init_random_mesh(20, (Color){255,255,255}, -2, 2, 1, 0);
     Mesh mesh2 = init_random_mesh(20, (Color){255,255,255}, -2, 2, 0, 1);
     Mesh mesh3 = init_random_mesh(20, (Color){255,255,255}, -2, 2, 0, 0);

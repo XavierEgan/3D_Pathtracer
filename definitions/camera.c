@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include "camera.h"
 #include "../math/Vec3.h"
 
@@ -10,7 +12,20 @@ Camera init_camera(float focal_length, int width_pixels, int height_pixels, floa
 
     Vec3 up = vec_normalise(vec_cross(right, forward));
 
-    Camera cam = {focal_length, width_pixels, height_pixels, width_fov*(3.1415926535f/180), height_fov*(3.1415926535f/180), rays_per_pixel, num_bounces, pos, forward, up, right};
+    float vertical_half_scale = tan(height_fov * (3.1415926535f/180) * .5f) * focal_length;
+    float horizontal_half_scale = tan(width_fov * (3.1415926535f/180) * .5f) * focal_length;
+
+    float px_height = (vertical_half_scale*2.0f)/height_pixels;
+    float px_width = (horizontal_half_scale*2.0f)/width_pixels;
+
+    Camera cam = {
+        focal_length, width_pixels, height_pixels, width_fov*(3.1415926535f/180), height_fov*(3.1415926535f/180), 
+        rays_per_pixel, num_bounces, 
+        vertical_half_scale, horizontal_half_scale,
+        px_height, px_width, 
+        1.0f/RAND_MAX,
+        pos, forward, up, right
+    };
 
     return cam;
 }

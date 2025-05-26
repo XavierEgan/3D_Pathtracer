@@ -12,6 +12,16 @@ typedef struct {
     int rays_per_pixel;
     int num_bounces;
 
+    // position on the plane of the corners
+    float vertical_half_scale;
+    float horizontal_half_scale;
+
+    // height of a specifc pixel
+    float px_height;
+    float px_width;
+
+    float inv_max_rand;
+
     Vec3 pos;
     Vec3 forward; // forward vec in global space
     Vec3 up;
