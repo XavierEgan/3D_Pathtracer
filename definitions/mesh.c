@@ -6,7 +6,8 @@
 
 // takes ownership of tris
 Mesh init_mesh(unsigned int num_tris, Tri* tris, Color color, int reflective, int emmisive) {
-    Mesh mesh = {num_tris, tris, color, reflective, emmisive};
+    Vec3 albedo = {color.r/255.0f, color.g/255.0f, color.b/255.0f};
+    Mesh mesh = {num_tris, tris, color, albedo, reflective, emmisive};
 
     return mesh;
 }
@@ -16,7 +17,8 @@ float randbetween(float min, float max) {
 }
 
 Mesh init_random_mesh(unsigned int num_tris, Color color, float min, float max, int reflective, int emmisive) {
-    Mesh mesh = {num_tris, NULL, color, reflective, emmisive};
+    Vec3 albedo = {color.r/255.0f, color.g/255.0f, color.b/255.0f};
+    Mesh mesh = {num_tris, NULL, color, albedo, reflective, emmisive};
 
     Tri* tris = malloc(sizeof(Tri) * num_tris);
     if (!tris) {

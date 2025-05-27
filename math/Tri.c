@@ -15,18 +15,18 @@ int ray_triangle_intercept(Vec3 ray, Vec3 ray_origin, Tri tri, Vec3* int_pos) {
         return 0; // no intercept
     }
 
-    float inv_det = 1.0/det;
+    float inv_det = 1.0f/det;
     Vec3 s = vec_sub(ray_origin, tri.a);
     float u = inv_det * vec_dot(s, rxe2);
 
-    if (u < 0.0 || u > 1.0) { // modified from the wiki to be stricter and more efficient saving a couple checks
+    if (u < 0.0f || u > 1.0f) { // modified from the wiki to be stricter and more efficient saving a couple checks
         return 0; // no intercept
     }
 
     Vec3 sxe1 = vec_cross(s, e1);
     float v = inv_det * vec_dot(ray, sxe1);
 
-    if (v < 0.0 || u + v > 1.0) {
+    if (v < 0.0f || u + v > 1.0f) {
         return 0; // no intercept
     }
 

@@ -3,6 +3,7 @@
 #include "Vec3.h"
 
 #define epsilon 0.0000001f
+#define PI 3.14159265359f
 
 Vec3 vec_init(float x, float y, float z) {
     Vec3 vec = {x, y, z};
@@ -25,6 +26,11 @@ Vec3 vec_add(Vec3 a, Vec3 b) {
 
 Vec3 vec_sub(Vec3 a, Vec3 b) {
     Vec3 r = {a.x - b.x, a.y - b.y, a.z - b.z};
+    return r;
+}
+
+Vec3 vec_mult(Vec3 a, Vec3 b) {
+    Vec3 r = {a.x*b.x, a.y*b.y, a.z*b.z};
     return r;
 }
 
@@ -73,7 +79,12 @@ double dist_bet_points(Vec3 p1, Vec3 p2) {
     return vec_len(vec_sub(p2, p1));
 }
 
-Vec3 vec_project(Vec3 on, Vec3 vec) {
-    Vec3 norm_vec = vec_normalise(vec);
-    return vec_scale(norm_vec, vec_dot(on, norm_vec));
+Vec3 reflect_ray(Vec3 ray, Vec3 norm) {
+    // R = reflected ray, I = incidence ray, N = tri normal
+    // R = I - 2(ProjN(I))
+    return vec_sub(ray, vec_scale(vec_proj(norm, ray), 2));
+}
+
+Vec3 epsilon_shift(Vec3 point, Vec3 dir) {
+    return vec_add(point, vec_scale(vec_normalise(dir), epsilon));
 }

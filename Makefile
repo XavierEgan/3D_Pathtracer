@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -g -mavx -O3 #<==== turn this TF on for SPEED
+CFLAGS = -Wall -g -mavx -O3 #-O3 or -Og
 
 # Target executable
 TARGET = d

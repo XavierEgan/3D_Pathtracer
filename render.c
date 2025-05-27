@@ -7,162 +7,44 @@
 #include "fancy_loading_bar.h"
 
 typedef struct {
+    Tri tri;
+    Color color;
+    Vec3 albedo;
+    Vec3 normal;
+    int reflective;
+    int emmisive;
+} Render_Tri;
+
+typedef struct {
+    Render_Tri* tris;
+    unsigned long num_tris; // may be smaller than tris
+} Render_Tri_Buffer;
+
+typedef struct {
     Color* data;
     unsigned int width;
     unsigned int height;
 } Frame_Buffer;
+
+Frame_Buffer alloc_frame_buffer(unsigned int width, unsigned int height) {
+    Color* data = malloc(sizeof(Color) * width * height);
+    if (!data) {
+        // it joever
+        fprintf(stderr, "alloc_frame_buffer alloc failed");
+        abort();
+    }
+    return (Frame_Buffer){data, width, height};
+}
+
+void free_frame_buffer(Frame_Buffer *buffer) {
+    free(buffer->data);
+}
 
 typedef struct {
     Render_Tri tri;
     Vec3 pos;
     float dist;
 } Ray_Tri_Intercept;
-
-int render_tri(Tri tri) {
-    return 1; // will be properly implimented later
-}
-
-Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
-    // first, how many tris do we have?
-    unsigned long num_tris = 0;
-    for (unsigned int m=0; m<num_meshs; m++) {
-        num_tris += meshs[m].num_tris;
-    }
-
-    // we will have at most this many triangles, so alloc a list to hold them all
-    Render_Tri* tris = malloc(sizeof(Render_Tri) * num_tris);
-    if (!tris) {
-        // completely unrecoverable.
-        fprintf(stderr, "Render_Tri_Buffer alloc failed");
-        abort();
-    }
-
-    // fill the list with Render_Tri
-    unsigned long long true_num_tris = 0;
-    for (unsigned int m=0; m<num_meshs; m++) {
-        for (unsigned int t=0; t<meshs[m].num_tris; t++) {
-            Tri tri = meshs[m].tris[t];
-
-            if (!render_tri(tri)) {
-                continue;
-            }
-
-            Render_Tri rtri = {tri, meshs[m].color, tri_normal(tri), meshs[m].reflective, meshs[m].emmisive};
-            tris[true_num_tris] = rtri;
-
-            true_num_tris++;
-        }
-    }
-    return (Render_Tri_Buffer){tris, true_num_tris};
-}
-
-void get_pixel_ray_colors(Camera cam, float plane_x, float plane_y, ) {
-    for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
-        float rand_x_off = rand() * cam.inv_max_rand * cam.px_width;
-        float rand_y_off = rand() * cam.inv_max_rand * cam.px_height;
-        // ray = forward*focal_len + (right*(horizontal_half_scale + rand_x_off) + up*(vertical_half_scale + rand_y_off))
-        Vec3 ray = vec_normalise(
-            vec_add(
-                vec_scale(cam.forward, cam.focal_length),
-                vec_add(
-                    vec_scale(cam.right, plane_x + rand_x_off), 
-                    vec_scale(cam.up, plane_y + rand_y_off)
-                )
-            )
-        );
-        Vec3 ray_origin = cam.pos;
-        
-        int count_bounces = 0;
-        closest_intercept.dist = 999999999.0f;
-
-        // we just need to fill up the ray_intercepts array here then we will backtrack through it later
-        for (unsigned int rt=0; rt<cam.num_bounces; rt++) {
-            has_intersec = 0;
-            // check if the ray intersecs any triangles
-            for (unsigned int t=0; t<tri_buffer.num_tris; t++) {
-                // check if the ray intersects the triangle
-                if (!ray_triangle_intercept(ray, ray_origin, tri_buffer.tris[t].tri, &cur_intersec)) {
-                    continue;
-                }
-
-                // there is at least one intersec
-                has_intersec = 1;
-
-                // get the distance from ray_origin to the point
-                cur_dist = dist_bet_points(cur_intersec, ray_origin);
-
-                // check if its the closest intersec so far
-                if (cur_dist < closest_intercept.dist) {
-                    closest_intercept.dist = cur_dist;
-                    closest_intercept.pos = cur_intersec;
-                    closest_intercept.tri = tri_buffer.tris[t];
-                }
-            }
-            if (!has_intersec) {
-                pixel_colors[r] = (Vec3){0.0f, 0.0f, 0.0f}; // color is black
-                break; // there are no more bounces (break and go to next ray)
-            }
-            
-            //printf("test");
-            // we do have an intersection
-            count_bounces++;
-            if (closest_intercept.tri.emmisive) {
-                if (rt == 0) {
-                    // we hit a light source on the first go, lucky us
-                    // "return" the lights color immidiently
-                    pixel_colors[r] = (Vec3){closest_intercept.tri.color.r, closest_intercept.tri.color.g, closest_intercept.tri.color.b};
-                    break; // there are no more bounces (break and go to next ray)
-                    // since has_intersec is zero, there will be no backtracking through our ray_intercepts list
-                } else {
-                    break; // there are no more bounces (break and go to next ray)
-                }
-            } else {
-                // we hit a triangle
-                // what type of reflectiveness is it?
-                if (closest_intercept.tri.reflective) {
-                    // its reflective so simply just reflect the ray
-                    ray_origin = closest_intercept.pos;
-                    // R = reflected ray, I = incidence ray, N = tri normal
-                    // R = I - 2(ProjN(I))
-                    Vec3 N = closest_intercept.tri.normal;
-                    Vec3 I = ray;
-                    ray = vec_sub(I, vec_scale(vec_proj(N, I), 2.0f));
-
-                    // add the thing we hit to the ray_intercepts array
-                    ray_intercepts[rt] = closest_intercept;
-                } else {
-                    // its not reflective 
-                    // ceebs doing cosine weighted reflection 
-                    // FIXME: MAKE THIS COSINE WEIGHTED YOU LAZY BASTARD
-                    
-                    ray_origin = closest_intercept.pos;
-
-                    // make a random ray (this is not uniformly disributed but i have to replace it with cosine weight later anyway)
-                    ray = vec_from_spherical(rand()*cam.inv_max_rand*2*3.1415926535f, rand()*cam.inv_max_rand*2*3.1415926535f);
-                    
-                    // if its "inside" the triange, then flip it along the triangle normal
-                    // if the scalar projection is negative its inside 
-                    if (vec_dot(ray, closest_intercept.tri.normal) < 0) {
-                        ray = vec_scale(ray, -1);
-                    }
-                    // add the thing we hit to the ray_intercepts array
-                    ray_intercepts[rt] = closest_intercept;
-                }
-            }
-        }
-
-        Vec3 ray_color = {0,0,0};
-        // backtrack through the pixel_intercepts array
-        // impliment attenuation later
-        if (count_bounces != 0) {
-            for (unsigned int i=count_bounces-1; i>0; i--) {
-                ray_color = vec_add(ray_color, (Vec3){ray_intercepts[i].tri.color.r, ray_intercepts[i].tri.color.g, ray_intercepts[i].tri.color.b});
-            }
-            ray_color = vec_scale(ray_color, 1.0f/count_bounces);
-            pixel_colors[r] = ray_color;
-        }
-    }
-}
 
 void write_image(Camera cam, Frame_Buffer buffer, char* filename) {
     FILE *fp = fopen(filename, "wb");
@@ -183,176 +65,188 @@ void write_image(Camera cam, Frame_Buffer buffer, char* filename) {
     fclose(fp);
 }
 
-void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
-    // alloc a frame buffer to write to
-    Color* data = malloc(sizeof(Color) * cam.height_pixels * cam.width_pixels);
-    if (!data) {
-        // unrecoverable, ggs
-        printf("frame buffer failed alloc");
+Render_Tri_Buffer get_tris(Mesh* meshs, unsigned int num_meshs) {
+    // first, how many tris do we have?
+    unsigned long num_tris = 0;
+    for (unsigned int m=0; m<num_meshs; m++) {
+        num_tris += meshs[m].num_tris;
+    }
+
+    // we will have at most this many triangles, so alloc a list to hold them all
+    Render_Tri* tris = malloc(sizeof(Render_Tri) * num_tris);
+    if (!tris) {
+        // completely unrecoverable.
+        fprintf(stderr, "Render_Tri_Buffer alloc failed");
         abort();
     }
 
-    Frame_Buffer buffer = {data, cam.width_pixels, cam.height_pixels};
+    // fill the list with Render_Tri
+    unsigned long long tri_index = 0;
+    for (unsigned int m=0; m<num_meshs; m++) {
+        for (unsigned int t=0; t<meshs[m].num_tris; t++) {
+            Tri tri = meshs[m].tris[t];
 
-    // construct list of all triangles for efficient memory access
-    Render_Tri_Buffer tri_buffer = get_tris(meshs, num_meshs);
+            Render_Tri rtri = {tri, meshs[m].color, meshs[m].albedo, tri_normal(tri), meshs[m].reflective, meshs[m].emmisive};
+            tris[tri_index] = rtri;
 
-    // starting position on the screen (then we sweep across)
-    float plane_x = -cam.horizontal_half_scale;
-    float plane_y = cam.vertical_half_scale;
+            tri_index++;
+        }
+    }
+    return (Render_Tri_Buffer){tris, num_tris};
+}
 
-    Vec3 ray;
-    Vec3 ray_origin;
-
-    Vec3 cur_intersec;
-    float cur_dist;
+int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Intercept* ret) {
+    int has_intercept = 0;
 
     Ray_Tri_Intercept closest_intercept;
-    closest_intercept.dist = 999999999.0f; // we need this to be inited
-    Ray_Tri_Intercept* ray_intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces); // fill this up then backtrack through it for the ray color
-    if (!ray_intercepts) {
-        // unrecoverable
-        printf("ray_intercepts failed to alloc");
-        abort();
-    }
-    int count_bounces;
+    Vec3 cur_intercept;
+    closest_intercept.dist = 999999999.0f;
 
-    Vec3* pixel_colors = malloc(sizeof(Color) * cam.rays_per_pixel);
-    if (!pixel_colors) {
-        // diabolically unrecoverable
-        printf("colors failed to alloc");
-        abort();
+    for (int t=0; t<tris.num_tris; t++) {
+        if (!ray_triangle_intercept(ray, ray_origin, tris.tris[t].tri, &cur_intercept)) {continue;}
+        // we have at least one intercept
+        has_intercept = 1;
+
+        float cur_dist = dist_bet_points(ray_origin, cur_intercept);
+
+        if (cur_dist < closest_intercept.dist) {
+            // we have a new closest intercept
+            closest_intercept.dist = cur_dist;
+            closest_intercept.tri = tris.tris[t];
+            closest_intercept.pos = cur_intercept;
+        }
     }
+    if (has_intercept) {
+        ret->dist = closest_intercept.dist;
+        ret->pos = closest_intercept.pos;
+        ret->tri = closest_intercept.tri;
+    }
+    // if there is no intercept then we do nothing with ret anyway
+    return has_intercept;
+}
+
+Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
+    // returns the color of the ray as a vec3 (x=r, y=g, z=b)
+
+    // mallocing billions of times is probably a bad idea, refactor later
+    Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
+
+    int intercept_count = 0;
+
+    for (unsigned int rb=0; rb<cam.num_bounces; rb++) {
+        if (!get_intercept(ray, ray_origin, tris, &intercepts[rb])) {
+            // we hit nothing which means this isnt lit so we just leave early
+            free(intercepts);
+            return (Vec3){0.0f, 0.0f, 0.0f};
+        }
+
+        // we have an intercept, handle it
+        intercept_count++;
+        if (intercepts[rb].tri.emmisive) {
+            // we hit a light source
+            if (rb == 0) {
+                // we hit a light source on the first go, it should just be the saturated value of the light source
+                free(intercepts);
+                return (Vec3){intercepts[rb].tri.color.r, intercepts[rb].tri.color.g, intercepts[rb].tri.color.b};
+            } else {
+                // we hit a light source at some point, were done tracing the ray now
+                break;
+            }
+        } else {
+            // we didnt hit a light source (matte)
+            // reflect the ray depending on material properties
+            if (intercepts[rb].tri.reflective) {
+                // its perfectly reflective
+                ray = vec_normalise(reflect_ray(ray, intercepts[rb].tri.normal));
+
+                // move it a lil along to make sure it doesnt intersect the same triangle
+                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
+
+                continue;
+            } else {
+                // its perfectly matte
+                // FIXME: use cosine weighted rays, this is not physically accurate
+
+                // make a random ray (this is not uniformly disributed but i have to replace it with cosine weight later anyway)
+                ray = vec_from_spherical(rand()*cam.inv_max_rand*2*3.1415926535f, rand()*cam.inv_max_rand*2*3.1415926535f);
+                
+                // if its "inside" the triange, then flip it along the triangle normal
+                // if the scalar projection is negative its inside 
+                if (vec_dot(ray, intercepts[rb].tri.normal) < 0) {
+                    ray = vec_scale(ray, -1);
+                }
+
+                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
+
+                continue;
+            }
+        }
+    }
+
+    // backtrack through the ray trace to get a final color
+    Vec3 final_color = {
+        intercepts[intercept_count-1].tri.color.r, 
+        intercepts[intercept_count-1].tri.color.g, 
+        intercepts[intercept_count-1].tri.color.b
+    }; // start out with the color of the light source hit
+
+    for (int i=intercept_count-2; i >= 0; i--) {
+        final_color = vec_mult(final_color, intercepts[i].tri.albedo);
+    }
+
+    free(intercepts);
+
+    return final_color;
+}
+
+Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y) {
+    Vec3 running_color_total = {0.0f, 0.0f, 0.0f}; // just sum all the pixel values and average it at the end
+
+    for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
+        // make the ray we are tracing
+        float rand_x_off = rand() * cam.inv_max_rand * cam.px_width;
+        float rand_y_off = rand() * cam.inv_max_rand * cam.px_height;
+        Vec3 ray = vec_normalise(
+            vec_add(
+                vec_scale(cam.forward, cam.focal_length),
+                vec_add(
+                    vec_scale(cam.right, plane_x + rand_x_off),
+                    vec_scale(cam.up, plane_y + rand_y_off)
+                )
+            )
+        );
+        Vec3 ray_origin = cam.pos;
+
+        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin));
+    }
+    
+    running_color_total = vec_scale(running_color_total, 1.0f/cam.rays_per_pixel);
+
+    return (Color){running_color_total.x, running_color_total.y, running_color_total.z};
+}
+
+void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
+    Frame_Buffer buffer = alloc_frame_buffer(cam.width_pixels, cam.height_pixels);
+
+    Render_Tri_Buffer tris = get_tris(meshs, num_meshs);
+
+    float plane_x;
+    float plane_y;
 
     start_loading_bar(cam);
 
     for (unsigned int y=0; y<cam.height_pixels; y++) {
         for (unsigned int x=0; x<cam.width_pixels; x++) {
-            for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
-                float rand_x_off = rand() * cam.inv_max_rand * cam.px_width;
-                float rand_y_off = rand() * cam.inv_max_rand * cam.px_height;
-                // ray = forward*focal_len + (right*(horizontal_half_scale + rand_x_off) + up*(vertical_half_scale + rand_y_off))
-                ray = vec_normalise(
-                    vec_add(
-                        vec_scale(cam.forward, cam.focal_length),
-                        vec_add(
-                            vec_scale(cam.right, plane_x + rand_x_off), 
-                            vec_scale(cam.up, plane_y + rand_y_off)
-                        )
-                    )
-                );
-                ray_origin = cam.pos;
-                
-                count_bounces = 0;
-                closest_intercept.dist = 999999999.0f;
+            plane_x = -cam.horizontal_half_scale + x * cam.px_width;
+            plane_y = cam.vertical_half_scale - y * cam.px_height;
 
-                // we just need to fill up the ray_intercepts array here then we will backtrack through it later
-                for (unsigned int rt=0; rt<cam.num_bounces; rt++) {
-                    has_intersec = 0;
-                    // check if the ray intersecs any triangles
-                    for (unsigned int t=0; t<tri_buffer.num_tris; t++) {
-                        // check if the ray intersects the triangle
-                        if (!ray_triangle_intercept(ray, ray_origin, tri_buffer.tris[t].tri, &cur_intersec)) {
-                            continue;
-                        }
-
-                        // there is at least one intersec
-                        has_intersec = 1;
-
-                        // get the distance from ray_origin to the point
-                        cur_dist = dist_bet_points(cur_intersec, ray_origin);
-
-                        // check if its the closest intersec so far
-                        if (cur_dist < closest_intercept.dist) {
-                            closest_intercept.dist = cur_dist;
-                            closest_intercept.pos = cur_intersec;
-                            closest_intercept.tri = tri_buffer.tris[t];
-                        }
-                    }
-                    if (!has_intersec) {
-                        pixel_colors[r] = (Vec3){0.0f, 0.0f, 0.0f}; // color is black
-                        break; // there are no more bounces (break and go to next ray)
-                    }
-                    
-                    //printf("test");
-                    // we do have an intersection
-                    count_bounces++;
-                    if (closest_intercept.tri.emmisive) {
-                        if (rt == 0) {
-                            // we hit a light source on the first go, lucky us
-                            // "return" the lights color immidiently
-                            pixel_colors[r] = (Vec3){closest_intercept.tri.color.r, closest_intercept.tri.color.g, closest_intercept.tri.color.b};
-                            break; // there are no more bounces (break and go to next ray)
-                            // since has_intersec is zero, there will be no backtracking through our ray_intercepts list
-                        } else {
-                            break; // there are no more bounces (break and go to next ray)
-                        }
-                    } else {
-                        // we hit a triangle
-                        // what type of reflectiveness is it?
-                        if (closest_intercept.tri.reflective) {
-                            // its reflective so simply just reflect the ray
-                            ray_origin = closest_intercept.pos;
-                            // R = reflected ray, I = incidence ray, N = tri normal
-                            // R = I - 2(ProjN(I))
-                            Vec3 N = closest_intercept.tri.normal;
-                            Vec3 I = ray;
-                            ray = vec_sub(I, vec_scale(vec_proj(N, I), 2.0f));
-
-                            // add the thing we hit to the ray_intercepts array
-                            ray_intercepts[rt] = closest_intercept;
-                        } else {
-                            // its not reflective 
-                            // ceebs doing cosine weighted reflection 
-                            // FIXME: MAKE THIS COSINE WEIGHTED YOU LAZY BASTARD
-                            
-                            ray_origin = closest_intercept.pos;
-
-                            // make a random ray (this is not uniformly disributed but i have to replace it with cosine weight later anyway)
-                            ray = vec_from_spherical(rand()*cam.inv_max_rand*2*3.1415926535f, rand()*cam.inv_max_rand*2*3.1415926535f);
-                            
-                            // if its "inside" the triange, then flip it along the triangle normal
-                            // if the scalar projection is negative its inside 
-                            if (vec_dot(ray, closest_intercept.tri.normal) < 0) {
-                                ray = vec_scale(ray, -1);
-                            }
-                            // add the thing we hit to the ray_intercepts array
-                            ray_intercepts[rt] = closest_intercept;
-                        }
-                    }
-                }
-
-                Vec3 ray_color = {0,0,0};
-                // backtrack through the pixel_intercepts array
-                // impliment attenuation later
-                if (count_bounces != 0) {
-                    for (unsigned int i=count_bounces-1; i>0; i--) {
-                        ray_color = vec_add(ray_color, (Vec3){ray_intercepts[i].tri.color.r, ray_intercepts[i].tri.color.g, ray_intercepts[i].tri.color.b});
-                    }
-                    ray_color = vec_scale(ray_color, 1.0f/count_bounces);
-                    pixel_colors[r] = ray_color;
-                }
-            }
-            
-            // average all the rays to be the final pixel color
-            Vec3 sum ={0.0f, 0.0f, 0.0f};
-            for (unsigned int i=0; i<cam.rays_per_pixel; i++) {
-                sum = vec_add(sum, pixel_colors[i]);
-            }
-            vec_scale(sum, 1.0f/cam.rays_per_pixel);
-            
-            buffer.data[y*cam.width_pixels + x] = (Color){(uint8_t)sum.x, (uint8_t)sum.y, (uint8_t)sum.z};
-
-            plane_x += cam.px_width;
+            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y);
 
             update_loading_bar(cam.rays_per_pixel, 1);
         }
-        plane_y -= cam.px_height;
-        plane_x = -cam.horizontal_half_scale;
     }
 
     write_image(cam, buffer, filename);
 
-    free(ray_intercepts);
-    free(buffer.data);
+    free_frame_buffer(&buffer);
 }

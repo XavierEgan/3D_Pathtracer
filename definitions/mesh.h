@@ -10,6 +10,7 @@ typedef struct {
     unsigned int num_tris;
     Tri* tris;
     Color color;
+    Vec3 albedo;
     int reflective;
     int emmisive;
 } Mesh;
