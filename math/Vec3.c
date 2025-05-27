@@ -3,7 +3,7 @@
 #include "Vec3.h"
 
 #define epsilon 0.0000001f
-#define PI 3.14159265359f
+
 
 Vec3 vec_init(float x, float y, float z) {
     Vec3 vec = {x, y, z};

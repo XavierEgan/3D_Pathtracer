@@ -165,20 +165,34 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
                 continue;
             } else {
                 // its perfectly matte
-                // FIXME: use cosine weighted rays, this is not physically accurate
+                // cosine weighted sampling
+                // source for algorithm: https://cseweb.ucsd.edu/~tzli/cse272/wi2023/lectures/malley_method.pdf
 
-                // make a random ray (this is not uniformly disributed but i have to replace it with cosine weight later anyway)
-                ray = vec_from_spherical(rand()*cam.inv_max_rand*2*3.1415926535f, rand()*cam.inv_max_rand*2*3.1415926535f);
-                
-                // if its "inside" the triange, then flip it along the triangle normal
-                // if the scalar projection is negative its inside 
-                if (vec_dot(ray, intercepts[rb].tri.normal) < 0) {
-                    ray = vec_scale(ray, -1);
+                // uniformly sample a point on a disk
+                float r = sqrt(rand()*cam.inv_max_rand);
+                float phi = 2.0f * PI * rand()*cam.inv_max_rand;
+
+                Vec3 local_ray = vec_from_spherical(acos(sqrt(1.0f-r*r)), phi);
+
+                // arbitrary tangent vector
+                Vec3 tangent;
+                Vec3 normal = intercepts[rb].tri.normal;
+                if (abs(normal.x) > 0.9f) {
+                    tangent = (Vec3){0.0f, 1.0f, 0.0f};
+                } else {
+                    tangent = (Vec3){1.0f, 0.0f, 0.0f};
                 }
 
-                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
+                // Gram-Schmidt orthogonalization
+                tangent = vec_normalise(vec_sub(tangent, vec_scale(normal, vec_dot(tangent, normal))));
 
-                continue;
+                // bitangent give us the the full basis
+                Vec3 bitangent = vec_cross(normal, tangent);
+
+                // Transform local direction to global space
+                ray = vec_normalise(vec_add(vec_add(vec_scale(tangent, local_ray.x), vec_scale(bitangent, local_ray.y)), vec_scale(normal, local_ray.z)));
+
+                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
             }
         }
     }
@@ -197,6 +211,10 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
     free(intercepts);
 
     return final_color;
+}
+
+float final_scale(float x) {
+    return pow(x * 255*255*255, 1.0f/4.0f);
 }
 
 Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y) {
@@ -222,7 +240,7 @@ Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float p
     
     running_color_total = vec_scale(running_color_total, 1.0f/cam.rays_per_pixel);
 
-    return (Color){running_color_total.x, running_color_total.y, running_color_total.z};
+    return (Color){final_scale(running_color_total.x), final_scale(running_color_total.y), final_scale(running_color_total.z)};
 }
 
 void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {

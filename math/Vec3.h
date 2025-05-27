@@ -1,6 +1,8 @@
 #ifndef VEC3_H
 #define VEC3_H
 
+#define PI 3.14159265359f
+
 typedef struct {
     float x;
     float y;
@@ -9,7 +11,7 @@ typedef struct {
 
 Vec3 vec_init(float x, float y, float z);
 
-Vec3 vec_from_spherical(float a, float b);
+Vec3 vec_from_spherical(float pitch, float yaw);
 
 Vec3 vec_add(Vec3 a, Vec3 b);
 
