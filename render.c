@@ -175,15 +175,23 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
                 // source for algorithm: https://cseweb.ucsd.edu/~tzli/cse272/wi2023/lectures/malley_method.pdf
 
                 // uniformly sample a point on a disk
-                float r = sqrt(rand()*cam.inv_max_rand);
-                float phi = 2.0f * PI * rand()*cam.inv_max_rand;
+                float u1 = rand() * cam.inv_max_rand;
+                float u2 = rand() * cam.inv_max_rand;
 
-                Vec3 local_ray = vec_from_spherical(acos(sqrt(1.0f-r*r)), phi);
+                float r = sqrt(u1);
+                float phi = 2.0f * PI * u2;
+
+                //Vec3 local_ray = vec_from_spherical(acos(sqrt(1.0f-r*r)), phi);
+                Vec3 local_ray = {
+                    r * cos(phi),
+                    r * sin(phi),
+                    sqrt(1.0f - u1)
+                };
 
                 // arbitrary tangent vector
                 Vec3 tangent;
                 Vec3 normal = intercepts[rb].tri.normal;
-                if (normal.x>0 ? normal.x : -normal.x  > 0.9f) {
+                if (normal.x > 0.9f || normal.x < -0.9f) {
                     tangent = (Vec3){0.0f, 1.0f, 0.0f};
                 } else {
                     tangent = (Vec3){1.0f, 0.0f, 0.0f};
