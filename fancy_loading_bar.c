@@ -55,14 +55,23 @@ void render_loading_bar() {
     bar[loading_bar_width] = '\0';
 
     float elapsed_time = (float)(clock() - start) / CLOCKS_PER_SEC;
+    long long est_time_remaining = (elapsed_time/percent - elapsed_time); // in s
 
-    printf("\033[HRendering [%s] %0.1f%%\n%ld/%ld pixels rendered\n%ld/%ld rays traced\ntime elapsed: %0.3fs\nest time remaining: %0.1fm                                      \n                                      ", 
+    int est_time_remaining_h = est_time_remaining / 3600;
+    est_time_remaining -= est_time_remaining_h*3600;
+
+    int est_time_remaining_m = est_time_remaining / 60;
+    est_time_remaining -= est_time_remaining_m*60;
+
+    int est_time_remaining_s = est_time_remaining;
+
+    printf("\033[HRendering [%s] %0.1f%%\n%lld/%lld pixels rendered\n%lld/%lld rays traced\ntime elapsed: %0.3fs\nest time remaining: %dh%dm%ds                                      \n                                      ", 
         bar,
         percent*100,
         pixels_so_far, est_pixels_total,
         rays_so_far, est_rays_total,
         elapsed_time,
-        (elapsed_time/percent - elapsed_time)/60
+        est_time_remaining_h, est_time_remaining_m, est_time_remaining_s
     );
     fflush(stdout);
 }

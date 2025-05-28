@@ -103,6 +103,12 @@ int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Int
     closest_intercept.dist = 999999999.0f;
 
     for (int t=0; t<tris.num_tris; t++) {
+        // backface culling
+        // if the salar projection of ray on tri normal is +ve then dont render coz its facing away
+        if (vec_dot(tris.tris[t].normal, ray) > 0) {
+            continue;
+        }
+
         if (!ray_triangle_intercept(ray, ray_origin, tris.tris[t].tri, &cur_intercept)) {continue;}
         // we have at least one intercept
         has_intercept = 1;
@@ -157,7 +163,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
             // reflect the ray depending on material properties
             if (intercepts[rb].tri.reflective) {
                 // its perfectly reflective
-                ray = vec_normalise(reflect_ray(ray, intercepts[rb].tri.normal));
+                ray = reflect_ray(ray, intercepts[rb].tri.normal);
 
                 // move it a lil along to make sure it doesnt intersect the same triangle
                 ray_origin = epsilon_shift(intercepts[rb].pos, ray);
@@ -177,7 +183,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
                 // arbitrary tangent vector
                 Vec3 tangent;
                 Vec3 normal = intercepts[rb].tri.normal;
-                if (abs(normal.x) > 0.9f) {
+                if (normal.x>0 ? normal.x : -normal.x  > 0.9f) {
                     tangent = (Vec3){0.0f, 1.0f, 0.0f};
                 } else {
                     tangent = (Vec3){1.0f, 0.0f, 0.0f};
@@ -214,7 +220,8 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
 }
 
 float final_scale(float x) {
-    return pow(x * 255*255*255, 1.0f/4.0f);
+    return x;
+    //return pow(x * 255*255*255, 1.0f/4.0f);
 }
 
 Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y) {

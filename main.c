@@ -29,7 +29,7 @@ int main(void) {
 
 
     Tri* left_wall_tris = malloc(sizeof(Tri) * 2);
-    left_wall_tris[0] = (Tri){tlb, blb, blf};
+    left_wall_tris[0] = (Tri){tlb, blf, blb};
     left_wall_tris[1] = (Tri){tlb, tlf, blf};
     Mesh left_wall = init_mesh(2, left_wall_tris, (Color){100, 100, 100}, 1, 0);
 
@@ -40,20 +40,20 @@ int main(void) {
 
     Tri* right_wall_tris = malloc(sizeof(Tri) * 2);
     right_wall_tris[0] = (Tri){trb, brb, brf};
-    right_wall_tris[1] = (Tri){trb, trf, brf};
+    right_wall_tris[1] = (Tri){trb, brf, trf};
     Mesh right_wall = init_mesh(2, right_wall_tris, (Color){100, 100, 100}, 1, 0);
 
     Tri* roof_tris = malloc(sizeof(Tri) * 2);
     roof_tris[0] = (Tri){tlb, trb, trf};
-    roof_tris[1] = (Tri){tlb, tlf, trf};
+    roof_tris[1] = (Tri){tlb, trf, tlf};
     Mesh roof = init_mesh(2, roof_tris, (Color){0, 0, 255}, 0, 1);
 
     Tri* floor_tris = malloc(sizeof(Tri) * 2);
-    floor_tris[0] = (Tri){blb, brb, brf};
+    floor_tris[0] = (Tri){blb, brf, brb};
     floor_tris[1] = (Tri){blb, blf, brf};
     Mesh floor = init_mesh(2, floor_tris, (Color){255, 0, 0}, 0, 1);
 
-    Mesh rand_mesh = init_random_mesh(20, (Color){200, 200, 200}, -.5, .5, 0, 1);
+    Mesh rand_mesh = init_random_mesh(20, (Color){255, 255, 255}, -.5, .5, 0, 1);
 
     unsigned int num_meshs = 6;
     Mesh meshs[] = {left_wall, back_wall, right_wall, roof, floor, rand_mesh};
@@ -61,14 +61,14 @@ int main(void) {
     float focal_length = 1;
     //1920x1080
     //640x360
-    int width_px = 500;
-    int height_px = 500;
+    int width_px = 150;
+    int height_px = 150;
     float horizontal_fov = 90.0f;
     float vertical_fov = 90.0f;
     int rays_per_pixel = 256*2;
     int num_bounces = 20;
     Vec3 pos = {-1, 0, 1};
-    Vec3 forward = {1, 0, -1.6}; // gets normalized in init_camera anyway
+    Vec3 forward = {1, 0, -1.7}; // gets normalized in init_camera anyway
 
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
@@ -85,10 +85,10 @@ int main2(void) {
 
     float focal_length = 1;
     // 1920x1080
-    //640x360
+    // 640x360
     int width_px = 100;
     int height_px = 100;
-    float horizontal_fov = 120.0f;
+    float horizontal_fov = 90.0f;
     float vertical_fov = 90.0f;
     int rays_per_pixel = 256;
     int num_bounces = 3;
@@ -98,6 +98,8 @@ int main2(void) {
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
     render(cam, meshs, num_meshs, "test_image.ppm");
+
+    return 0;
 }
 
 int main3(void) {
@@ -124,5 +126,7 @@ int main3(void) {
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
     render(cam, meshs, num_meshs, "test_image.ppm");
+
+    return 0;
 }
 

@@ -50,7 +50,7 @@ Vec3 vec_cross(Vec3 a, Vec3 b) {
 
 Vec3 vec_normalise(Vec3 a) {
     float len = vec_len(a);
-    if (abs(len-1)<epsilon) {
+    if (len-1.0f<epsilon && len-1.0f>-epsilon) {
         return a;
     }
 
@@ -82,7 +82,7 @@ double dist_bet_points(Vec3 p1, Vec3 p2) {
 Vec3 reflect_ray(Vec3 ray, Vec3 norm) {
     // R = reflected ray, I = incidence ray, N = tri normal
     // R = I - 2(ProjN(I))
-    return vec_sub(ray, vec_scale(vec_proj(norm, ray), 2));
+    return vec_normalise(vec_sub(ray, vec_scale(vec_proj(norm, ray), 2)));
 }
 
 Vec3 epsilon_shift(Vec3 point, Vec3 dir) {
