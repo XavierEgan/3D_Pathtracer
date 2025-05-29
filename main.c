@@ -31,7 +31,7 @@ int main(void) {
     Tri* left_wall_tris = malloc(sizeof(Tri) * 2);
     left_wall_tris[0] = (Tri){tlb, blf, blb};
     left_wall_tris[1] = (Tri){tlb, tlf, blf};
-    Mesh left_wall = init_mesh(2, left_wall_tris, (Color){100, 100, 100}, 1, 0);
+    Mesh left_wall = init_mesh(2, left_wall_tris, (Color){200, 200, 200}, 1, 0);
 
     Tri* back_wall_tris = malloc(sizeof(Tri) * 2);
     back_wall_tris[0] = (Tri){tlb,brb, trb};
@@ -41,7 +41,7 @@ int main(void) {
     Tri* right_wall_tris = malloc(sizeof(Tri) * 2);
     right_wall_tris[0] = (Tri){trb, brb, brf};
     right_wall_tris[1] = (Tri){trb, brf, trf};
-    Mesh right_wall = init_mesh(2, right_wall_tris, (Color){0, 0, 255}, 0, 0);
+    Mesh right_wall = init_mesh(2, right_wall_tris, (Color){200, 200, 200}, 1, 0); // usually 0 0 255
 
     Tri* roof_tris = malloc(sizeof(Tri) * 2);
     roof_tris[0] = (Tri){tlb, trb, trf};
@@ -61,14 +61,14 @@ int main(void) {
     float focal_length = 1;
     //1920x1080
     //640x360
-    int width_px = 150;
-    int height_px = 150;
+    int width_px = 500;
+    int height_px = 500;
     float horizontal_fov = 90.0f;
     float vertical_fov = 90.0f;
-    int rays_per_pixel = 256*2;
-    int num_bounces = 20;
-    Vec3 pos = {-2, 0, 1};
-    Vec3 forward = {1, 0, -1.3}; // gets normalized in init_camera anyway
+    int rays_per_pixel = 256*4;
+    int num_bounces = 50; // there is early exit so most rays are only gonna bounce a couple times
+    Vec3 pos = {-.9 , 0, 1};
+    Vec3 forward = {.9, 0, -1}; // gets normalized in init_camera anyway
 
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
