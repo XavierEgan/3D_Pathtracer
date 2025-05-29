@@ -17,19 +17,29 @@ This project is a 3D pathtracer built in pure C which renders an image in the `.
 ## Future Optimizations
 The pathtracer is incredibly slow, lacking many basic optimisations. However, the following optimisations are in the roadmap for implementation:
 - **Adaptive pixel sampling**: Instead of always casting all 1000+ rays per pixel, first cast 9 strategic rays (corners, edges, center). If they all miss, skip the remaining rays. If they all hit the same triangle, only test that triangle for the remaining rays.
-- **Triangle coherence optimization**: When the initial sample rays all hit the same triangle, we can skip testing other triangles for the remaining rays in that pixel.
  - **Bounding Volume Hierarchy Tree**. We can arrange the triangles into a binary tree with each node being a Axis Aligned Bounding Box. This means we can cut out triangle search space in half at each step, resulting in $O(log(n))$ instead of $O(n)$
  - **SIMD Instructions** to make 4 ray triangle intersection checks in parallel
 
-## Unoptimized Renderer
-This is the first complete, unoptimized implimentaion. It uses a lot of brute force to render the image, resulting in long render times.
+## Examples
 
-Future optimisations will be explainedi in a later section with performance analysis
+![blob of bright white triangles in a multi colored room with mirrors facing each other so its repeated a bunch of times](readme_images\Render3.png)
+#### Performance
+**Render Time:** 13840s (3h 50m 40s)  
+#### Specs  
+**CPU:** i9-12900k  
+**Threads:** 1  
+**Compiler:** gcc  
+**Compiler Flags:** -Wall -g -mavx -O3 (although mavx is not used)  
+#### Render Params
+**Dimensions:** 1000x1000  
+**Rays Per Pixel:** 4096  
+**Max Bounces Per Ray:** 20  
+**Horizontal FOV:** 90  
+**Triangles:** 30
 
-### Examples
 ![blob of bright triangles in a multi colored room with a mirror](readme_images/Render1.png)  
 #### Performance
-**Render Time:** 747s (12m 27s)  
+**Render Time:** 560s (9m 20s)  
 #### Specs  
 **CPU:** i9-12900k  
 **Threads:** 1  
@@ -42,10 +52,10 @@ Future optimisations will be explainedi in a later section with performance anal
 **Horizontal FOV:** 90  
 **Triangles:** 30
 
-![blob of bright triangles in a multi colored room with mirros facing each other so its repeated a bunch of times](readme_images/Render2.png)  
+![blob of bright white triangles in a multi colored room with mirrors facing each other so its repeated a bunch of times](readme_images/Render2.png)  
 
 #### Performance
-**Render Time:** 870.5s (14m 30s)  
+**Render Time:** 628.4s (10m 28s)  
 #### Specs  
 **CPU:** i9-12900k  
 **Threads:** 1  
@@ -58,7 +68,9 @@ Future optimisations will be explainedi in a later section with performance anal
 **Horizontal FOV:** 90  
 **Triangles:** 30
 
-### Performance Analysis
+## Performance
+### Unoptimized
+#### Performance Explanation
 You might be wondering whats taking an i9-12900k almost 15 minutes to render only 30 triangles at 500x500 resolution?  
 Well, there are $500\times500 = 250,000$ pixels  
 each pixel casting $1024$ rays  
@@ -76,3 +88,13 @@ each ray checking $30$ triangles (this highlights the need for a BVHT)
 500\times 500\times 1024\times 15 = 3,840,000,000 
 ```
 Even in the best case there is still almost 4 billion ray intersect checks to complete, or 4.5 million per second at 870.5s render time.
+
+## Optimized Renderer
+### Optimizations
+#### Adaptive pixel sampling
+
+#### Bounding Volume Hierarchy Tree
+
+
+## Unoptimized Renderer
+This is the first complete, unoptimized implimentaion. It uses a lot of brute force to render the image, resulting in long render times.

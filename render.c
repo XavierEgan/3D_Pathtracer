@@ -131,18 +131,14 @@ int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Int
     return has_intercept;
 }
 
-Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
+Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ray_Tri_Intercept* intercepts) {
     // returns the color of the ray as a vec3 (x=r, y=g, z=b)
-
-    // mallocing billions of times is probably a bad idea, refactor later
-    Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
 
     int intercept_count = 0;
 
     for (unsigned int rb=0; rb<cam.num_bounces; rb++) {
         if (!get_intercept(ray, ray_origin, tris, &intercepts[rb])) {
             // we hit nothing which means this isnt lit so we just leave early
-            free(intercepts);
             return (Vec3){0.0f, 0.0f, 0.0f};
         }
 
@@ -152,7 +148,6 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
             // we hit a light source
             if (rb == 0) {
                 // we hit a light source on the first go, it should just be the saturated value of the light source
-                free(intercepts);
                 return (Vec3){intercepts[rb].tri.color.r, intercepts[rb].tri.color.g, intercepts[rb].tri.color.b};
             } else {
                 // we hit a light source at some point, were done tracing the ray now
@@ -222,8 +217,6 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin) {
         final_color = vec_mult(final_color, intercepts[i].tri.albedo);
     }
 
-    free(intercepts);
-
     return final_color;
 }
 
@@ -232,7 +225,7 @@ float final_scale(float x) {
     //return pow(x * 255*255*255, 1.0f/4.0f);
 }
 
-Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y) {
+Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, Ray_Tri_Intercept* intercepts) {
     Vec3 running_color_total = {0.0f, 0.0f, 0.0f}; // just sum all the pixel values and average it at the end
 
     for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
@@ -250,7 +243,7 @@ Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float p
         );
         Vec3 ray_origin = cam.pos;
 
-        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin));
+        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, intercepts));
     }
     
     running_color_total = vec_scale(running_color_total, 1.0f/cam.rays_per_pixel);
@@ -266,6 +259,8 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     float plane_x;
     float plane_y;
 
+    Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
+
     start_loading_bar(cam);
 
     for (unsigned int y=0; y<cam.height_pixels; y++) {
@@ -273,7 +268,7 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
             plane_x = -cam.horizontal_half_scale + x * cam.px_width;
             plane_y = cam.vertical_half_scale - y * cam.px_height;
 
-            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y);
+            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y, intercepts);
 
             update_loading_bar(cam.rays_per_pixel, 1);
         }
@@ -282,4 +277,5 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     write_image(cam, buffer, filename);
 
     free_frame_buffer(&buffer);
+    free(intercepts);
 }
