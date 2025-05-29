@@ -65,13 +65,13 @@ each pixel casting $1024$ rays
 each ray bouncing a max of $50$ times  
 each ray checking $30$ triangles (this highlights the need for a BVHT)  
 ```math
-\text{Worst case (every ray bouncing 50 times): }\\
-500\times 500\times 1024\times 50\times 30 = 384,000,000,000\\
-\\\space\\
-\text{Average case (every ray bouncing 5 times, half triangles culled): }\\
-500\times 500\times 1024\times 5\times 15 = 19,200,000,000\\
-\\\space\\
-\text{Reasonably Best case (every ray bouncing 1 times, half triangles culled): }\\
-500\times 500\times 1024\times 15 = 3,840,000,000\\
+\text{Worst case (every ray bouncing 50 times): } \\
+500\times 500\times 1024\times 50\times 30 = 384,000,000,000 \\
+\\ \space \\
+\text{Average case (every ray bouncing 5 times, half triangles culled): } \\
+500\times 500\times 1024\times 5\times 15 = 19,200,000,000 \\
+\\ \space \\
+\text{Reasonably Best case (every ray bouncing 1 times, half triangles culled): } \\
+500\times 500\times 1024\times 15 = 3,840,000,000 \\
 ```
 Even in the best case there is still almost 4 billion ray intersect checks to complete, or 4.5 million per second at 870.5s render time.
