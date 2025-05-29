@@ -24,7 +24,7 @@ The pathtracer is incredibly slow, lacking many basic optimisations. However, th
 
 ![blob of bright white triangles in a multi colored room with mirrors facing each other so its repeated a bunch of times](readme_images/Render3.png)
 #### Performance
-**Render Time:** 13840s (3h 50m 40s)  
+**Render Time:** 10603.7s (2h 56m 43s)  
 #### Specs  
 **CPU:** i9-12900k  
 **Threads:** 1  
