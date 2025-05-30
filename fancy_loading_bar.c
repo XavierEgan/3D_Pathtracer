@@ -31,11 +31,19 @@ void start_loading_bar(Camera cam) {
     render_loading_bar();
 }
 
+int render_counter = 0;
+int render_counter_max = 20;
+
 void update_loading_bar(uint32_t delta_rays, uint32_t delta_pixels) {
     rays_so_far += delta_rays;
     pixels_so_far += delta_pixels;
 
-    render_loading_bar();
+    if (render_counter >= render_counter_max) {
+        render_loading_bar();
+        render_counter = 0;
+    } else {
+        render_counter++;
+    }
 }
 
 void render_loading_bar() {
@@ -43,7 +51,7 @@ void render_loading_bar() {
     
     int num_equal_signs = (int)(percent * loading_bar_width);
 
-    char bar[512];
+    char bar[256];
 
     for (unsigned int i=0; i<loading_bar_width; i++) {
         if (i < num_equal_signs) {
@@ -73,5 +81,5 @@ void render_loading_bar() {
         elapsed_time,
         est_time_remaining_h, est_time_remaining_m, est_time_remaining_s
     );
-    fflush(stdout);
+    //fflush(stdout);
 }

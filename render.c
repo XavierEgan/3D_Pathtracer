@@ -154,7 +154,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 break;
             }
         } else {
-            // we didnt hit a light source (matte)
+            // we didnt hit a light source
             // reflect the ray depending on material properties
             if (intercepts[rb].tri.reflective) {
                 // its perfectly reflective
@@ -225,22 +225,44 @@ float final_scale(float x) {
     //return pow(x * 255*255*255, 1.0f/4.0f);
 }
 
+Vec3 get_ray(Camera cam, float r, float u) {
+    return vec_normalise(
+        vec_add(
+            vec_scale(cam.forward, cam.focal_length),
+            vec_add(
+                vec_scale(cam.right, r),
+                vec_scale(cam.up, u)
+            )
+        )
+    );
+}
+
+int boring_pixel(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y) {
+    Ray_Tri_Intercept ret;
+    for (unsigned int y=0; y<3; y++) {
+        for (unsigned int x=0; x<3; x++) {
+            if (get_intercept(get_ray(cam, plane_x + cam.px_width*x/2.0f, plane_y + cam.px_height*y/2.0f), cam.pos, tris, &ret)) {
+                // its not boring since it didnt intersect anything
+                return 0;
+            }
+        }
+    }
+    // it is boring since it didnt intersect anything
+    return 1;
+}
+
 Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, Ray_Tri_Intercept* intercepts) {
     Vec3 running_color_total = {0.0f, 0.0f, 0.0f}; // just sum all the pixel values and average it at the end
+
+    if (boring_pixel(cam, tris, plane_x, plane_y)) {
+        return (Color){0,0,0};
+    }
 
     for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
         // make the ray we are tracing
         float rand_x_off = rand() * cam.inv_max_rand * cam.px_width;
         float rand_y_off = rand() * cam.inv_max_rand * cam.px_height;
-        Vec3 ray = vec_normalise(
-            vec_add(
-                vec_scale(cam.forward, cam.focal_length),
-                vec_add(
-                    vec_scale(cam.right, plane_x + rand_x_off),
-                    vec_scale(cam.up, plane_y + rand_y_off)
-                )
-            )
-        );
+        Vec3 ray = get_ray(cam, plane_x + rand_x_off, plane_y + rand_y_off);
         Vec3 ray_origin = cam.pos;
 
         running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, intercepts));
