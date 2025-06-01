@@ -104,10 +104,6 @@ int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Int
 
     for (int t=0; t<tris.num_tris; t++) {
         // backface culling
-        // if the salar projection of ray on tri normal is +ve then dont render coz its facing away
-        if (vec_dot(tris.tris[t].normal, ray) > 0) {
-            continue;
-        }
 
         if (!ray_triangle_intercept(ray, ray_origin, tris.tris[t].tri, &cur_intercept)) {continue;}
         // we have at least one intercept
@@ -154,11 +150,17 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 break;
             }
         } else {
+            // first, fix the normal if were hitting the back of the tri
+            Vec3 normal = intercepts[rb].tri.normal;
+            if (vec_dot(normal, ray) > 0) {
+                normal = vec_scale(normal, -1.0f);
+            }
+            
             // we didnt hit a light source
             // reflect the ray depending on material properties
             if (intercepts[rb].tri.reflective) {
                 // its perfectly reflective
-                ray = reflect_ray(ray, intercepts[rb].tri.normal);
+                ray = reflect_ray(ray, normal);
 
                 // move it a lil along to make sure it doesnt intersect the same triangle
                 ray_origin = epsilon_shift(intercepts[rb].pos, ray);
