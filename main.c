@@ -387,24 +387,24 @@ void scene4_1() {
     floor_tris[1] = (Tri){blb, blf, brf};
     Mesh floor = init_mesh(2, floor_tris, (Color){255, 0, 255}, 0, 0);
 
-    Mesh rand_mesh = init_random_mesh(20, (Color){255, 255, 255}, -.5, .5, 0, 0);
+    Mesh rand_mesh = init_random_mesh(10, (Color){255, 255, 255}, -.5, .5, 0, 0);
 
     unsigned int num_meshs = 6;
     Mesh meshs[] = {left_wall, back_wall, right_wall, roof, floor, rand_mesh};
 
     float focal_length = 1.0f;
-    int width_px = 500;
-    int height_px = 500;
+    int width_px  = 2048; // 1024
+    int height_px = 2048; // 1024
     float horizontal_fov = 90.0f;
-    float vertical_fov = 90.0f;
-    int rays_per_pixel = 256*4;
-    int num_bounces = 20; // there is early exit so most rays are only gonna bounce a couple times
+    float vertical_fov   = 90.0f;
+    int rays_per_pixel = 256*16;
+    int num_bounces = 4; // there is early exit so most rays are only gonna bounce a couple times
     Vec3 pos = {-2 , 0, .8};
     Vec3 forward = {1, 0, -.4}; // gets normalized in init_camera anyway
 
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
-    render(cam, meshs, num_meshs, "scene4_1_1.ppm");
+    render(cam, meshs, num_meshs, "scene4_1_high.ppm");
 }
 
 

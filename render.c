@@ -163,7 +163,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 ray = reflect_ray(ray, normal);
 
                 // move it a lil along to make sure it doesnt intersect the same triangle
-                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
+                ray_origin = epsilon_shift(intercepts[rb].pos, normal);
 
                 continue;
             } else {
@@ -187,7 +187,6 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
 
                 // arbitrary tangent vector
                 Vec3 tangent;
-                Vec3 normal = intercepts[rb].tri.normal;
                 if (normal.x > 0.9f || normal.x < -0.9f) {
                     tangent = (Vec3){0.0f, 1.0f, 0.0f};
                 } else {
@@ -203,7 +202,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 // Transform local direction to global space
                 ray = vec_normalise(vec_add(vec_add(vec_scale(tangent, local_ray.x), vec_scale(bitangent, local_ray.y)), vec_scale(normal, local_ray.z)));
 
-                ray_origin = epsilon_shift(intercepts[rb].pos, ray);
+                ray_origin = epsilon_shift(intercepts[rb].pos, normal);
             }
         }
     }

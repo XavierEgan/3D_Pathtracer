@@ -2,7 +2,7 @@
 #include <math.h>
 #include "Vec3.h"
 
-#define epsilon 0.0000001f
+#define EPSILON 1e-4f
 
 
 Vec3 vec_init(float x, float y, float z) {
@@ -50,7 +50,7 @@ Vec3 vec_cross(Vec3 a, Vec3 b) {
 
 Vec3 vec_normalise(Vec3 a) {
     float len = vec_len(a);
-    if (len-1.0f<epsilon && len-1.0f>-epsilon) {
+    if (len-1.0f<EPSILON && len-1.0f>-EPSILON) {
         return a;
     }
 
@@ -86,5 +86,5 @@ Vec3 reflect_ray(Vec3 ray, Vec3 norm) {
 }
 
 Vec3 epsilon_shift(Vec3 point, Vec3 dir) {
-    return vec_add(point, vec_scale(vec_normalise(dir), epsilon));
+    return vec_add(point, vec_scale(vec_normalise(dir), EPSILON));
 }
