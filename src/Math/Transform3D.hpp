@@ -28,9 +28,11 @@
         
         Inverse
             Basis vectors must be orthonormal (Orthogonal/perpendicular and normalized)
+            just transpose the matrix
             
         Affine Inverse
             Basis vectors can be anything lmao
+            take the inverse
             
 */
 struct Transform3D {
@@ -39,21 +41,47 @@ struct Transform3D {
 
     // constructors
     Transform3D() : basis({1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f}), pos(Vec3()) {}
+    Transform3D(Mat3 basis) : basis(basis), pos(Vec3()) {}
     Transform3D(Mat3 basis, Vec3 pos) : basis(basis), pos(pos) {}
 
     // overrides
     // * overrides
     Transform3D operator*(const Transform3D other) const {
-        return Transform3D(basis * other.basis, pos + other.pos);
+        return Transform3D(basis * other.basis, other * pos + other.pos);
     }
     Vec3 operator*(const Vec3 other) const {
         // returns the local point in global space
         return other * basis + pos;
     }
     Transform3D inverse() const {
-        
+        return Transform3D(basis.transpose(), -pos);
     }
-    Transform3D affine_inverse() const {
-        
+    Transform3D affineInverse() const {
+        return Transform3D(basis.inverse(), -pos);
+    }
+
+    Transform3D orthonormalBasis(Vec3 normal, Vec3 pos) const {
+        // arbitrary tangent vector
+        Vec3 tangent;
+        if (normal.x > 0.9f || normal.x < -0.9f) {
+            tangent = (Vec3){0.0f, 1.0f, 0.0f};
+        } else {
+            tangent = (Vec3){1.0f, 0.0f, 0.0f};
+        }
+
+        // Gram-Schmidt orthogonalization
+        tangent = (tangent - normal * tangent.dot(normal)).normalized();
+
+        // bitangent give us the the full basis
+        Vec3 bitangent = normal.cross(tangent);
+
+        return Transform3D(
+            Mat3(
+                normal.x, normal.y, normal.z,
+                tangent.x, tangent.y, tangent.z,
+                bitangent.x, bitangent.y, bitangent.z
+            ),
+            pos
+        );
     }
 };

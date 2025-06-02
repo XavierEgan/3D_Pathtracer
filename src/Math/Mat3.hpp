@@ -121,4 +121,20 @@ struct Mat3 {
     Mat3 inverse() const {
         return (*this).adjoint() * (1.0f/(*this).det());
     }
+
+    Mat3 transpose() const {
+        return Mat3 {
+            (*this)(0,0), (*this)(0,1), (*this)(0,2), 
+            (*this)(1,0), (*this)(1,1), (*this)(1,2), 
+            (*this)(2,0), (*this)(2,1), (*this)(2,2)
+        };
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Mat3& mat) {
+        os << "((" 
+        << mat(0,0) << ", " << mat(1,0) << ", " << mat(2,0) << ")\n(" 
+        << mat(0,1) << ", " << mat(1,1) << ", " << mat(2,1) << ")\n(" 
+        << mat(0,2) << ", " << mat(1,2) << ", " << mat(2,2) << "))";
+        return os;
+    }
 };
