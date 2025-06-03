@@ -48,11 +48,11 @@ The pathtracer is incredibly slow, lacking many basic optimisations. However, th
 **Compiler:** gcc  
 **Compiler Flags:** -Wall -g -mavx -O3 (although mavx is not used)  
 #### Render Params
-**Dimensions:** 1024x1024  
+**Dimensions:** 512x512  
 **Rays Per Pixel:** 2048  
-**Max Bounces Per Ray:** 20  
+**Max Bounces Per Ray:** 4  
 **Horizontal FOV:** 90  
-**Triangles:** 30
+**Triangles:** 20
 
 ![blob of bright white triangles in a multi colored room with mirrors facing each other so its repeated a bunch of times](readme_images/Render3.png)
 #### Performance
