@@ -1,9 +1,6 @@
 #pragma once
 
 #include <iostream>
-#include <cmath>
-#include <array>
-#include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "../ext/stb_image.h"

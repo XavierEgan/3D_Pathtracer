@@ -6,7 +6,7 @@
 #include "Vec3.hpp"
 #include "Tri.hpp"
 
-static constexpr float EPSILON = 1e-6f;
+static constexpr float EPSILON = 1e-4f;
 
 struct RayHit {
     Vec3 point;
