@@ -22,6 +22,22 @@ The pathtracer is incredibly slow, lacking many basic optimisations. However, th
 
 ## Examples
 
+![alt text](readme_images/scene4_1_high.png)
+
+#### Performance
+**Render Time:** 18322.201s (5h 5m 22.201s)
+#### Specs  
+**CPU:** i9-12900k  
+**Threads:** 1  
+**Compiler:** gcc  
+**Compiler Flags:** -Wall -g -mavx -O3 (although mavx is not used)  
+#### Render Params
+**Dimensions:** 1024x1024  
+**Rays Per Pixel:** 2048  
+**Max Bounces Per Ray:** 20  
+**Horizontal FOV:** 90  
+**Triangles:** 30
+
 ![alt text](readme_images/Render4.png)
 
 #### Performance

@@ -222,7 +222,7 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
 }
 
 float final_scale(float x) {
-    return x;
+    return (float)pow(x/255, 1/2.2)*255;
     //return pow(x * 255*255*255, 1.0f/4.0f);
 }
 
