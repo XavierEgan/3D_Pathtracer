@@ -7,7 +7,7 @@
 #include "../ext/stb_image.h"
 
 struct Image {
-    uint8_t* get_image_data(const char* fileName, int& x, int& y, int& channels,  int force_channels) {
+    static uint8_t* get_image_data(const char* fileName, int& x, int& y, int& channels,  int force_channels) {
 
         unsigned char* data = stbi_load(fileName, &x, &y, &channels, force_channels);
 
@@ -18,7 +18,7 @@ struct Image {
         return data;
     }
 
-    void free_image_data(uint8_t* data) {
+    static void free_image_data(uint8_t* data) {
         stbi_image_free(data);
     }
 };

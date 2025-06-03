@@ -133,4 +133,10 @@ struct Vec3 {
         os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
         return os;
     }
+
+    static Vec3 fromCosTheta(float cosTheta, float phi) {
+        float sinTheta = sqrt(1.0f - cosTheta * cosTheta);
+        
+        return Vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
+    }
 };
