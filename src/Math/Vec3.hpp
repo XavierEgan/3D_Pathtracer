@@ -130,6 +130,14 @@ struct Vec3 {
         return x >= other.x && y >= other.y && z >= other.z;
     }
     template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator>(const T& other) const {
+        return x > other && y > other && z > other;
+    }
+    template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator>=(const T& other) const {
+        return x >= other && y >= other && z >= other;
+    }
+    template<typename T> 
     typename std::enable_if<std::is_same<T, Vec3>::value, bool>::type operator<(const T& other) const {
         return x < other.x && y < other.y && z < other.z;
     }
@@ -138,12 +146,28 @@ struct Vec3 {
         return x <= other.x && y <= other.y && z <= other.z;
     }
     template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator<(const T& other) const {
+        return x < other && y < other && z < other;
+    }
+    template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator<=(const T& other) const {
+        return x <= other && y <= other && z <= other;
+    }
+    template<typename T> 
     typename std::enable_if<std::is_same<T, Vec3>::value, bool>::type operator==(const T& other) const {
         return x == other.x && y == other.y && z == other.z; 
     }
     template<typename T> 
     typename std::enable_if<std::is_same<T, Vec3>::value, bool>::type operator!=(const T& other) const {
         return x != other.x || y != other.y || z != other.z; 
+    }
+    template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator==(const T& other) const {
+        return x == other && y == other && z == other;
+    }
+    template<typename T> 
+    typename std::enable_if<std::is_arithmetic<T>::value, bool>::type operator!=(const T& other) const {
+        return x != other && y != other && z != other;
     }
     
     // other helpers

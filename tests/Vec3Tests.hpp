@@ -11,7 +11,7 @@ also does not check most edge cases
 void Vec3Tests(void) {
     TestManager testManager = TestManager();
 
-    TEST(VecCompare) {
+    TEST(VecCompareOtherVec) {
         Vec3 a = Vec3(1,1,1);
         Vec3 b = Vec3(a.x+1, a.y+1, a.z+1);
 
@@ -38,6 +38,19 @@ void Vec3Tests(void) {
         ASSERT_FALSE(a > b);
         ASSERT_FALSE(a < b); // BOTH < and > can be false
 
+        return true;
+    };
+
+    TEST(VecCompareArithmatic) {
+        Vec3 a = Vec3(1,1,1);
+        ASSERT_TRUE(a > 0);
+        ASSERT_FALSE(a < 0);
+        ASSERT_TRUE(a >= 0);
+        ASSERT_FALSE(a <= 0);
+        
+        ASSERT_TRUE(a == 1);
+        ASSERT_FALSE(a != 1);
+        
         return true;
     };
 
