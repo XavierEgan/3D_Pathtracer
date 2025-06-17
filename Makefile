@@ -1,15 +1,15 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -Wall -std=c++17
+CXXFLAGS = -Wall -std=c++17 -O0
 
 # Main files
-MAIN_TARGET = d
-MAIN_SOURCES = src/Main.cpp
+MAIN_TARGET = m
+MAIN_SOURCES = 
 MAIN_OBJECTS = $(MAIN_SOURCES:.cpp=.o)
 
 # Target executable
-TEST_TARGET = test
-TEST_SOURCES = 
+TEST_TARGET = t
+TEST_SOURCES = tests\Vec3Tests.cpp
 TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
 
 # This is default since its first (make is the same as make main)
