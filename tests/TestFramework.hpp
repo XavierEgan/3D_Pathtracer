@@ -48,9 +48,9 @@ struct TestManager {
 
 #define TEST(testName) std::function<bool()> testName; testManager.registerTest(TestStruct(&testName, #testName)); testName = []() -> bool
 
-#define ASSERT_TRUE(condition) if (!(condition)) throw std::runtime_error("Assertion failed: " #condition)
+#define ASSERT_TRUE(condition) if (!(condition)) throw std::runtime_error("Assert True failed: " #condition)
 
-#define ASSERT_FALSE(condition) if (condition) throw std::runtime_error("Assertion failed: " #condition)
+#define ASSERT_FALSE(condition) if (condition) throw std::runtime_error("Assert False failed: " #condition)
 
 #define ASSERT_EQ(actual, expected) if ((expected) != (actual)) throw std::runtime_error("Assertion failed: " #expected #actual)
 
