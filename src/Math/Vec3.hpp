@@ -148,12 +148,12 @@ struct Vec3 {
     
     // other helpers
     template<typename T>
-    typename std::enable_if<std::is_same<T, Vec3>::value, float>::type dot(T& other) {
+    typename std::enable_if<std::is_same<T, Vec3>::value, float>::type dot(const T& other) const {
         return x*other.x + y*other.y + z*other.z;
     }
 
     template<typename T>
-    typename std::enable_if<std::is_same<T, Vec3>::value, Vec3>::type cross(T& other) {
+    typename std::enable_if<std::is_same<T, Vec3>::value, Vec3>::type cross(const T& other) const {
         return Vec3(
             y*other.z - z*other.y,
             z*other.x - x*other.z,
