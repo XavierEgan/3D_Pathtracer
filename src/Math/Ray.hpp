@@ -9,8 +9,8 @@
 #include <type_traits>
 #include <optional>
 
-#include "src\Math\Vec3.hpp"
-#include "src\Math\Tri.hpp"
+#include "Vec3.hpp"
+#include "Tri.hpp"
 
 struct RayHit {
     Vec3 intersecPoint;

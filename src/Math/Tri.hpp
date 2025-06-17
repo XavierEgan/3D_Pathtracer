@@ -8,7 +8,7 @@
 #include <iostream>
 #include <type_traits>
 
-#include "src\Math\Vec3.hpp"
+#include "Vec3.hpp"
 
 struct Tri {
     Vec3 v0, v1, v2;

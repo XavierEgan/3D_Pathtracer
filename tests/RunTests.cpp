@@ -1,6 +1,6 @@
-#include "tests\Vec3Tests.hpp"
-#include "tests\RayTests.hpp"
-#include "tests\TriTests.hpp"
+#include "Vec3Tests.hpp"
+#include "RayTests.hpp"
+#include "TriTests.hpp"
 
 int main(void) {
     Vec3Tests();
