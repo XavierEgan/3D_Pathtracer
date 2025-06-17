@@ -9,7 +9,7 @@ MAIN_OBJECTS = $(MAIN_SOURCES:.cpp=.o)
 
 # Target executable
 TEST_TARGET = t
-TEST_SOURCES = tests\Vec3Tests.cpp
+TEST_SOURCES = tests\RunTests.cpp
 TEST_OBJECTS = $(TEST_SOURCES:.cpp=.o)
 
 # This is default since its first (make is the same as make main)

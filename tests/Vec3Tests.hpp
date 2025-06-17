@@ -8,7 +8,7 @@ but like it should be fine for these simple operations
 also does not check most edge cases
 */
 
-int main(void) {
+void Vec3Tests(void) {
     TestManager testManager = TestManager();
 
     TEST(VecCompare) {
@@ -138,6 +138,4 @@ int main(void) {
     };
 
     testManager.runTests();
-
-    return 0; // not needed but here it is
 }
