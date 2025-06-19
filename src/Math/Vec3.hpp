@@ -192,4 +192,18 @@ struct Vec3 {
     float length() const {
         return std::sqrt(x*x + y*y + z*z);
     }
+
+    Vec3& normalize() {
+        float len = this->length();
+        if (len > 0.0f) {
+            this->x /= len;
+            this->y /= len;
+            this->z /= len;
+            return *this;
+        }
+    }
+
+    Vec3 normalized() const {
+        return *this / this->length();
+    }
 };

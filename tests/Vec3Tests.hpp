@@ -150,5 +150,14 @@ void Vec3Tests(void) {
         return true;
     };
 
+    TEST(VectorNormalization) {
+        Vec3 a = Vec3(1,1,1);
+        ASSERT_CLOSE(a.normalize(), Vec3(1,1,1) / sqrt(3));
+        a.normalized();
+        ASSERT_CLOSE(a, Vec3(1,1,1) / sqrt(3));
+
+        return true;
+    };
+
     testManager.runTests();
 }

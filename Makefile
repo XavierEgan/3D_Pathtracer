@@ -4,7 +4,7 @@ CXXFLAGS = -Wall -std=c++17 -O0
 
 # Main files
 MAIN_TARGET = m
-MAIN_SOURCES = 
+MAIN_SOURCES = src/main.cpp
 MAIN_OBJECTS = $(MAIN_SOURCES:.cpp=.o)
 
 # Target executable

@@ -8,16 +8,19 @@
 #include <iostream>
 #include <type_traits>
 #include <optional>
+#include <cstdlib>
 
 #include "Vec3.hpp"
 #include "Tri.hpp"
+#include "../Misc/Scene.hpp"
 
-struct RayHit {
+struct TriHit {
     Vec3 intersecPoint;
     float dist;
     Vec3 baryCoords;
+    Tri tri;
 
-    RayHit(Vec3 intersecPoint, float dist, Vec3 baryCoords) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords) {}
+    TriHit(Vec3 intersecPoint, float dist, Vec3 baryCoords, ) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri) {}
 };
 
 struct Ray {
@@ -26,8 +29,17 @@ struct Ray {
 
     Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
     Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
+    Ray(float planeX, float planeY, const Scene& scene) {
+        float u1 = rand() / (float) RAND_MAX;
+        float u2 = rand() / (float) RAND_MAX;
 
-    std::optional<RayHit> rayTriIntercept(Tri& tri) const {
+        direction = scene.camera.forward * scene.camera.screenParams.focalLength 
+            + scene.camera.up * (planeY + u1 * scene.camera.screenParams.pxHeight) 
+            + scene.camera.right * (planeX + u2 * scene.camera.screenParams.pxWidth);
+        origin = scene.camera.pos;
+    }
+
+    std::optional<TriHit> rayTriIntercept(const Tri& tri) const {
         //Möller–Trumbore intersection algorithm
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
@@ -56,8 +68,34 @@ struct Ray {
         float t = inv_det * edge2.dot(sCrossEdge1);
 
         if (t > 1e-4f) {
-            return RayHit(origin + direction * t, t, Vec3(1.0f - (u + v), u, v));
+            return TriHit(origin + direction * t, t, Vec3(1.0f - (u + v), u, v), tri);
         } else {
+            return {};
+        }
+    }
+
+    std::optional<TriHit> getTriIntersection(const std::vector<Tri> tris) const {
+        // store the closest hit so far
+        TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
+        bool hitFlag = false;
+
+        for (const Tri& tri : tris) {
+            std::optional<TriHit> triHit = this->rayTriIntercept(tri);
+
+            if (triHit.has_value()) {
+                // we have a hit!
+                if (triHit.value().dist < closestHit.dist) {
+                    // its the closest one so far!
+                    closestHit = triHit.value();
+                    hitFlag = true;
+                }
+            }
+        }
+        
+        if (hitFlag) {
+            return closestHit;
+        } else {
+            // no hit
             return {};
         }
     }

@@ -6,7 +6,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 struct Map {
-    unsigned char* data;
+    unsigned char* data; // plays nicer with stbi and cuda
     int width;
     int height;
     int channels;
@@ -15,10 +15,14 @@ struct Map {
         data = stbi_load(fileLoc, &width, &height, &channels, 0);
     }
     
-    char sample(float u, float v) {
+    Vec3 sample(float u, float v) {
         size_t ui = (int)(u * width);
         size_t vi = (int)(v * height);
 
-        return data[vi * height + ui];
+        return Vec3(
+            data[vi * height * 3 + ui * 3],
+            data[vi * height * 3 + ui * 3 + 1],
+            data[vi * height * 3 + ui * 3 + 2]
+        ) / 255;
     }
 };
