@@ -21,7 +21,11 @@ struct Tri {
 
     Tri(Vec3 v0, Vec3 v1, Vec3 v2, Vec3 v0uv, Vec3 v1uv, Vec3 v2uv, uint16_t materialID) : v0(v0), v1(v1), v2(v2), v0uv(v0uv), v1uv(v1uv), v2uv(v2uv), materialID(materialID) {}
 
-    Vec3 getUV(Vec3 baryCoords) {
+    Vec3 getUV(const Vec3& baryCoords) const {
         return v0uv * baryCoords.x + v1uv * baryCoords.y + v2uv * baryCoords.z;
+    }
+
+    Vec3 normal() const {
+        return (v0 - v1).cross(v0 - v2);
     }
 };

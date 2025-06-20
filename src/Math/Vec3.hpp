@@ -201,6 +201,7 @@ struct Vec3 {
             this->z /= len;
             return *this;
         }
+        return *this;
     }
 
     Vec3 normalized() const {

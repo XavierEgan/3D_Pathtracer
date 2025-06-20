@@ -7,13 +7,6 @@
 #include "Misc/ScreenBuffer.hpp"
 #include "Math/Ray.hpp"
 
-struct TriAlbedoEmission {
-    Vec3 albedo;
-    Vec3 emission;
-
-    TriAlbedoEmission(Vec3 albedo, Vec3 emission) : albedo(albedo), emission(emission) {}
-};
-
 struct Pathtracer {
     Scene scene;
 
@@ -67,14 +60,15 @@ struct Pathtracer {
                 }
 
                 // we have a hit!
-                // add the albedo and emission to the list
+                // get the tris material
                 Material& triMaterial = scene.getMaterial(triHit.value().tri.materialID);
 
-                Vec3 uv = triHit.value().tri.getUV(triHit.value().baryCoords);
-                Vec3 triAlbedo = triMaterial.getAlbedo(uv.x,uv.y);
-                Vec3 triEmission = triAlbedo * triMaterial.emission;
+                // reflect the ray
+                TriAlbedoEmission triAlbedoemission = activeRay.bsdfReflect(triMaterial, triHit.value());
 
-                hitTriAlbedoEmissions.push_back(TriAlbedoEmission(triAlbedo, triEmission));
+                // add the albedo and emission to the list for later backtracking
+                hitTriAlbedoEmissions.push_back(triAlbedoemission);
+
             }
         }
     }

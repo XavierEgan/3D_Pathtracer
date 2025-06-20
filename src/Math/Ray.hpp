@@ -20,7 +20,14 @@ struct TriHit {
     Vec3 baryCoords;
     Tri tri;
 
-    TriHit(Vec3 intersecPoint, float dist, Vec3 baryCoords, ) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri) {}
+    TriHit(Vec3 intersecPoint, float dist, Vec3 baryCoords, Tri tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri) {}
+};
+
+struct TriAlbedoEmission {
+    Vec3 albedo;
+    Vec3 emission;
+
+    TriAlbedoEmission(Vec3 albedo, Vec3 emission) : albedo(albedo), emission(emission) {}
 };
 
 struct Ray {
@@ -97,6 +104,36 @@ struct Ray {
         } else {
             // no hit
             return {};
+        }
+    }
+
+    TriAlbedoEmission bsdfReflect(const Material& material, const TriHit& triHit) {
+        float u1 = rand() / (float)RAND_MAX;
+        float u2 = rand() / (float)RAND_MAX;
+
+        // get the uv coords of the intersection
+        Vec3 triUV = triHit.tri.getUV(triHit.baryCoords);
+
+        Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
+        Vec3 triEmission = triAlbedo * material.emission;
+
+        // get tri normal
+        Vec3 triNormal = triHit.tri.normal();
+
+
+
+        // should we bounce off or pass through?
+        if (u1 < material.transmission) {
+            // pass through
+
+        } else {
+            // reflect
+            // should we diffuse reflect or specular reflect
+            if (u2 < material.metallic) {
+                
+            } else {
+
+            }
         }
     }
 };

@@ -15,7 +15,7 @@ struct Material {
 
     Map texture;
 
-    Vec3 getAlbedo(float u, float v) {
+    Vec3 getAlbedo(float u, float v) const {
         return texture.sample(u, v);
     }
 };

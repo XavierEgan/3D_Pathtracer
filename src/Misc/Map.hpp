@@ -15,7 +15,7 @@ struct Map {
         data = stbi_load(fileLoc, &width, &height, &channels, 0);
     }
     
-    Vec3 sample(float u, float v) {
+    Vec3 sample(float u, float v) const {
         size_t ui = (int)(u * width);
         size_t vi = (int)(v * height);
 

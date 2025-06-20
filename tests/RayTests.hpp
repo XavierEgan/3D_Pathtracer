@@ -28,7 +28,7 @@ void RayTests(void) {
     TEST(RayTriIntersectionRayHit) {
         Ray ray = Ray(Vec3(1, 0, 0), Vec3(-1, 0, 0));
         Tri tri = Tri(Vec3(0, -1, 1), Vec3(0, 1, -1), Vec3(0, -1, -1), 0);
-        RayHit hit = ray.rayTriIntercept(tri).value();
+        TriHit hit = ray.rayTriIntercept(tri).value();
 
         ASSERT_CLOSE(hit.baryCoords, Vec3(.5, .5, 0)); // should be on the edge
         ASSERT_CLOSE(hit.dist, 1);

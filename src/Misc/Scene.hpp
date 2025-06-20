@@ -21,6 +21,7 @@ struct Scene {
 
     uint16_t registerMaterial(Material material) {
         materials.push_back(material);
+        return materials.size() - 1;
     }
 
     Material& getMaterial(uint16_t materialID) {
