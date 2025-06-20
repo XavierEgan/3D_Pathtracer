@@ -136,43 +136,48 @@ int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Int
     return has_intercept;
 }
 
-Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ray_Tri_Intercept* intercepts, int* local_seed) {
+Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, int* local_seed) {
     // returns the color of the ray as a vec3 (x=r, y=g, z=b)
 
     int intercept_count = 0;
 
+    Vec3 final_color = (Vec3){1.0f, 1.0f, 1.0f};
+
     for (unsigned int rb=0; rb<cam.num_bounces; rb++) {
-        if (!get_intercept(ray, ray_origin, tris, &intercepts[rb])) {
+        Ray_Tri_Intercept ray_tri_inter;
+        if (!get_intercept(ray, ray_origin, tris, &ray_tri_inter)) {
             // we hit nothing which means this isnt lit so we just leave early
             return (Vec3){0.0f, 0.0f, 0.0f};
         }
 
+        final_color = vec_mult(final_color, ray_tri_inter.tri.albedo);
+
         // we have an intercept, handle it
         intercept_count++;
-        if (intercepts[rb].tri.emmisive) {
+        if (ray_tri_inter.tri.emmisive) {
             // we hit a light source
             if (rb == 0) {
                 // we hit a light source on the first go, it should just be the saturated value of the light source
-                return (Vec3){intercepts[rb].tri.color.r, intercepts[rb].tri.color.g, intercepts[rb].tri.color.b};
+                return (Vec3){ray_tri_inter.tri.color.r, ray_tri_inter.tri.color.g, ray_tri_inter.tri.color.b};
             } else {
                 // we hit a light source at some point, were done tracing the ray now
                 break;
             }
         } else {
             // first, fix the normal if were hitting the back of the tri
-            Vec3 normal = intercepts[rb].tri.normal;
+            Vec3 normal = ray_tri_inter.tri.normal;
             if (vec_dot(normal, ray) > 0) {
                 normal = vec_scale(normal, -1.0f);
             }
             
             // we didnt hit a light source
             // reflect the ray depending on material properties
-            if (intercepts[rb].tri.reflective) {
+            if (ray_tri_inter.tri.reflective) {
                 // its perfectly reflective
                 ray = reflect_ray(ray, normal);
 
                 // move it a lil along to make sure it doesnt intersect the same triangle
-                ray_origin = epsilon_shift(intercepts[rb].pos, normal);
+                ray_origin = epsilon_shift(ray_tri_inter.pos, normal);
 
                 continue;
             } else {
@@ -211,23 +216,12 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 // Transform local direction to global space
                 ray = vec_normalise(vec_add(vec_add(vec_scale(tangent, local_ray.x), vec_scale(bitangent, local_ray.y)), vec_scale(normal, local_ray.z)));
 
-                ray_origin = epsilon_shift(intercepts[rb].pos, normal);
+                ray_origin = epsilon_shift(ray_tri_inter.pos, normal);
             }
         }
     }
 
-    // backtrack through the ray trace to get a final color
-    Vec3 final_color = {
-        intercepts[intercept_count-1].tri.color.r, 
-        intercepts[intercept_count-1].tri.color.g, 
-        intercepts[intercept_count-1].tri.color.b
-    }; // start out with the color of the light source hit
-
-    for (int i=intercept_count-2; i >= 0; i--) {
-        final_color = vec_mult(final_color, intercepts[i].tri.albedo);
-    }
-
-    return final_color;
+    return vec_scale(final_color, 255.0f);
 }
 
 float final_scale(float x) {
@@ -261,7 +255,7 @@ int boring_pixel(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_
     return 1;
 }
 
-Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, Ray_Tri_Intercept* intercepts, int* local_seed) {
+Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, int* local_seed) {
     Vec3 running_color_total = {0.0f, 0.0f, 0.0f}; // just sum all the pixel values and average it at the end
 
     if (boring_pixel(cam, tris, plane_x, plane_y)) {
@@ -275,7 +269,7 @@ Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float p
         Vec3 ray = get_ray(cam, plane_x + rand_x_off, plane_y + rand_y_off);
         Vec3 ray_origin = cam.pos;
 
-        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, intercepts, local_seed));
+        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, local_seed));
     }
     
     running_color_total = vec_scale(running_color_total, 1.0f/cam.rays_per_pixel);
@@ -297,16 +291,14 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     #pragma omp parallel for num_threads(NUM_THREADS)
     for (unsigned int y=0; y<cam.height_pixels; y++) {
         unsigned int local_seed = 12345 * 1000 + y;
-        Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
         for (unsigned int x=0; x<cam.width_pixels; x++) {
             plane_x = -cam.horizontal_half_scale + x * cam.px_width;
             plane_y = cam.vertical_half_scale - y * cam.px_height;
 
-            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y, intercepts, &local_seed);
+            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y, &local_seed);
 
             update_loading_bar(cam.rays_per_pixel, 1, NUM_THREADS);
         }
-        free(intercepts);
     }
 
     printf("%ds", (clock() - start)/CLOCKS_PER_SEC/NUM_THREADS);
