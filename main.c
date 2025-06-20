@@ -393,18 +393,18 @@ void scene4_1() {
     Mesh meshs[] = {left_wall, back_wall, right_wall, roof, floor, rand_mesh};
 
     float focal_length = 1.0f;
-    int width_px  = 512; // 1024
-    int height_px = 512; // 1024
+    int width_px  = 1024; // 1024
+    int height_px = 1024; // 1024
     float horizontal_fov = 90.0f;
     float vertical_fov   = 90.0f;
-    int rays_per_pixel = 256*1;
-    int num_bounces = 4; // there is early exit so most rays are only gonna bounce a couple times
+    int rays_per_pixel = 256*8;
+    int num_bounces = 20; // there is early exit so most rays are only gonna bounce a couple times
     Vec3 pos = {-2 , 0, .8};
     Vec3 forward = {1, 0, -.4}; // gets normalized in init_camera anyway
 
     Camera cam = init_camera(focal_length, width_px, height_px, horizontal_fov, vertical_fov, rays_per_pixel, num_bounces, pos, forward);
 
-    render(cam, meshs, num_meshs, "scene4_1.ppm");
+    render(cam, meshs, num_meshs, "scene4_1_super_high.ppm");
 }
 
 

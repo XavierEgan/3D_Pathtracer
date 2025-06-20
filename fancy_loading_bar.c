@@ -19,7 +19,7 @@ uint64_t rays_so_far;
 
 clock_t start;
 
-void start_loading_bar(Camera cam) {
+void start_loading_bar(Camera cam, int num_threads) {
     start = clock();
     
     est_pixels_total = cam.height_pixels * cam.width_pixels;
@@ -28,25 +28,25 @@ void start_loading_bar(Camera cam) {
     printf("\x1b[2J");
     fflush(stdout);
 
-    render_loading_bar();
+    render_loading_bar(num_threads);
 }
 
 int render_counter = 0;
 int render_counter_max = 20;
 
-void update_loading_bar(uint32_t delta_rays, uint32_t delta_pixels) {
+void update_loading_bar(uint32_t delta_rays, uint32_t delta_pixels, int num_threads) {
     rays_so_far += delta_rays;
     pixels_so_far += delta_pixels;
 
     if (render_counter >= render_counter_max) {
-        render_loading_bar();
+        render_loading_bar(num_threads);
         render_counter = 0;
     } else {
         render_counter++;
     }
 }
 
-void render_loading_bar() {
+void render_loading_bar(int num_threads) {
     float percent = (((float)pixels_so_far) / est_pixels_total);
     
     int num_equal_signs = (int)(percent * loading_bar_width);
@@ -62,7 +62,7 @@ void render_loading_bar() {
     }
     bar[loading_bar_width] = '\0';
 
-    float elapsed_time = (float)(clock() - start) / CLOCKS_PER_SEC;
+    float elapsed_time = (float)(clock() - start) / CLOCKS_PER_SEC / num_threads;
     long long est_time_remaining = (elapsed_time/percent - elapsed_time); // in s
 
     int est_time_remaining_h = est_time_remaining / 3600;

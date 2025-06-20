@@ -2,9 +2,18 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <time.h>
 
 #include "render.h"
 #include "fancy_loading_bar.h"
+
+#define NUM_THREADS 24
+
+/* THIS IS SO OMP doesnt shit the bed coz of everything fighting over rand() seed */
+unsigned int simple_rand(unsigned int* seed) {
+    *seed = *seed * 1664525 + 1013904223;
+    return *seed;
+}
 
 typedef struct {
     Tri tri;
@@ -127,7 +136,7 @@ int get_intercept(Vec3 ray, Vec3 ray_origin, Render_Tri_Buffer tris, Ray_Tri_Int
     return has_intercept;
 }
 
-Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ray_Tri_Intercept* intercepts) {
+Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ray_Tri_Intercept* intercepts, int* local_seed) {
     // returns the color of the ray as a vec3 (x=r, y=g, z=b)
 
     int intercept_count = 0;
@@ -172,8 +181,8 @@ Vec3 trace_ray(Camera cam, Render_Tri_Buffer tris, Vec3 ray, Vec3 ray_origin, Ra
                 // source for algorithm: https://cseweb.ucsd.edu/~tzli/cse272/wi2023/lectures/malley_method.pdf
 
                 // uniformly sample a point on a disk
-                float u1 = rand() * cam.inv_max_rand;
-                float u2 = rand() * cam.inv_max_rand;
+                float u1 = simple_rand(local_seed) * cam.inv_max_rand;
+                float u2 = simple_rand(local_seed) * cam.inv_max_rand;
 
                 float r = sqrt(u1);
                 float phi = 2.0f * PI * u2;
@@ -252,7 +261,7 @@ int boring_pixel(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_
     return 1;
 }
 
-Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, Ray_Tri_Intercept* intercepts) {
+Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float plane_y, Ray_Tri_Intercept* intercepts, int* local_seed) {
     Vec3 running_color_total = {0.0f, 0.0f, 0.0f}; // just sum all the pixel values and average it at the end
 
     if (boring_pixel(cam, tris, plane_x, plane_y)) {
@@ -261,12 +270,12 @@ Color get_pixel_color(Camera cam, Render_Tri_Buffer tris, float plane_x, float p
 
     for (unsigned int r=0; r<cam.rays_per_pixel; r++) {
         // make the ray we are tracing
-        float rand_x_off = rand() * cam.inv_max_rand * cam.px_width;
-        float rand_y_off = rand() * cam.inv_max_rand * cam.px_height;
+        float rand_x_off = simple_rand(local_seed) * cam.inv_max_rand * cam.px_width;
+        float rand_y_off = simple_rand(local_seed) * cam.inv_max_rand * cam.px_height;
         Vec3 ray = get_ray(cam, plane_x + rand_x_off, plane_y + rand_y_off);
         Vec3 ray_origin = cam.pos;
 
-        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, intercepts));
+        running_color_total = vec_add(running_color_total, trace_ray(cam, tris, ray, ray_origin, intercepts, local_seed));
     }
     
     running_color_total = vec_scale(running_color_total, 1.0f/cam.rays_per_pixel);
@@ -282,23 +291,27 @@ void render(Camera cam, Mesh* meshs, unsigned int num_meshs, char* filename) {
     float plane_x;
     float plane_y;
 
-    Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
+    start_loading_bar(cam, NUM_THREADS);
+    time_t start = clock();
 
-    start_loading_bar(cam);
-
+    #pragma omp parallel for num_threads(NUM_THREADS)
     for (unsigned int y=0; y<cam.height_pixels; y++) {
+        unsigned int local_seed = 12345 * 1000 + y;
+        Ray_Tri_Intercept* intercepts = malloc(sizeof(Ray_Tri_Intercept) * cam.num_bounces);
         for (unsigned int x=0; x<cam.width_pixels; x++) {
             plane_x = -cam.horizontal_half_scale + x * cam.px_width;
             plane_y = cam.vertical_half_scale - y * cam.px_height;
 
-            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y, intercepts);
+            buffer.data[y*cam.width_pixels + x] = get_pixel_color(cam, tris, plane_x, plane_y, intercepts, &local_seed);
 
-            update_loading_bar(cam.rays_per_pixel, 1);
+            update_loading_bar(cam.rays_per_pixel, 1, NUM_THREADS);
         }
+        free(intercepts);
     }
+
+    printf("%ds", (clock() - start)/CLOCKS_PER_SEC/NUM_THREADS);
 
     write_image(cam, buffer, filename);
 
     free_frame_buffer(&buffer);
-    free(intercepts);
 }
