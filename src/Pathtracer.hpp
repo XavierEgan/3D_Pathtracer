@@ -10,10 +10,7 @@
 struct Pathtracer {
     Scene scene;
 
-    std::vector<TriAlbedoEmission> hitTriAlbedoEmissions; // to store tri hits and avoid mallocing billions of times
     std::vector<Tri> tris; // to store all tris
-
-    std::vector<Vec3> rayColors; // to store tri hits and avoid mallocing billions of times
 
     Pathtracer(Scene scene) : scene(scene) {}
 
@@ -26,28 +23,30 @@ struct Pathtracer {
         (void) scene.materials;
 
         // loop for every pixel
+        #pragma omp parallel for num_threads(NUM_THREADS)
         for (size_t pixelY; pixelY < scene.camera.screenParams.height; pixelY++) {
+            // so threads dont fight over a single seed
+            unsigned int localSeed = 0;
             for (size_t pixelX; pixelX < scene.camera.screenParams.width; pixelX++) {
                 float planeX = -scene.camera.screenParams.horizontalHalfScale + pixelX * scene.camera.screenParams.pxWidth;
                 float planeY = scene.camera.screenParams.verticalHalfScale - pixelY * scene.camera.screenParams.pxHeight;
 
                 buffer.write(
-                    getPixelColor(planeX, planeY),
+                    getPixelColor(planeX, planeY, localSeed),
                     pixelX, pixelY
                 );
             }
         }
     }
 
-    Vec3 getPixelColor(float planeX, float planeY) {
-        // reset the rayColors vector
-        rayColors.clear();
+    Vec3 getPixelColor(float planeX, float planeY, unsigned int& localSeed) {
+        Vec3 runningPixelColor = Vec3(0.0f, 0.0f, 0.0f);
 
         for (size_t r = 0; r < scene.camera.screenParams.rayPerPixel; r++) {
-            // reset the triHits vector
-            hitTriAlbedoEmissions.clear();
+            Vec3 runningAlbedo = Vec3(1.0f, 1.0f, 1.0f);
+            Vec3 runningEmission = Vec3(0.0f, 0.0f, 0.0f);
 
-            // get the ray but slightly nudged
+            // get the ray from the camera but slightly nudged
             Ray activeRay = Ray(planeX, planeY, scene);
 
             for (size_t i = 0; i < scene.camera.screenParams.maxBounces; i++) {
@@ -55,7 +54,7 @@ struct Pathtracer {
                 std::optional<TriHit> triHit = activeRay.getTriIntersection(tris);
 
                 if (!triHit.has_value()) {
-                    // we didnt hit anything which means we are done, now backtrack through trialbedoemission
+                    // we didnt hit anything which means we are done
                     break;
                 }
 
@@ -63,13 +62,14 @@ struct Pathtracer {
                 // get the tris material
                 Material& triMaterial = scene.getMaterial(triHit.value().tri.materialID);
 
-                // reflect the ray
-                TriAlbedoEmission triAlbedoemission = activeRay.bsdfReflect(triMaterial, triHit.value());
-
-                // add the albedo and emission to the list for later backtracking
-                hitTriAlbedoEmissions.push_back(triAlbedoemission);
-
+                // reflect the ray and update runningAlbedo and runningEmission
+                activeRay.bsdfReflect(triMaterial, triHit.value(), localSeed, runningAlbedo, runningEmission);
             }
+
+            Vec3 finalColor = runningAlbedo + runningEmission;
+            runningPixelColor += finalColor;
         }
+
+        return runningPixelColor / scene.camera.screenParams.maxBounces;
     }
 };

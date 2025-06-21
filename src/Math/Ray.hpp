@@ -12,6 +12,7 @@
 
 #include "Vec3.hpp"
 #include "Tri.hpp"
+#include "rand.hpp"
 #include "../Misc/Scene.hpp"
 
 struct TriHit {
@@ -21,13 +22,6 @@ struct TriHit {
     Tri tri;
 
     TriHit(Vec3 intersecPoint, float dist, Vec3 baryCoords, Tri tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri) {}
-};
-
-struct TriAlbedoEmission {
-    Vec3 albedo;
-    Vec3 emission;
-
-    TriAlbedoEmission(Vec3 albedo, Vec3 emission) : albedo(albedo), emission(emission) {}
 };
 
 struct Ray {
@@ -107,33 +101,53 @@ struct Ray {
         }
     }
 
-    TriAlbedoEmission bsdfReflect(const Material& material, const TriHit& triHit) {
-        float u1 = rand() / (float)RAND_MAX;
-        float u2 = rand() / (float)RAND_MAX;
-
+    void bsdfReflect(const Material& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo, Vec3& runningEmission) {
         // get the uv coords of the intersection
         Vec3 triUV = triHit.tri.getUV(triHit.baryCoords);
 
         Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
+        runningAlbedo *= triAlbedo;
+
         Vec3 triEmission = triAlbedo * material.emission;
+        runningEmission += triEmission;
 
         // get tri normal
-        Vec3 triNormal = triHit.tri.normal();
+        Vec3 edge1 = triHit.tri.v0 - triHit.tri.v1;
+        Vec3 edge2 = triHit.tri.v0 - triHit.tri.v1;
+        Vec3 triNormal = (edge1).cross(edge2).normalized();
 
+        // TODO: Normal maps
+        Vec3 normalOffset = Vec3(); //material.getNormalOffset(triUV.x,triUV.y);
+        Vec3 normal = (triNormal + normalOffset).normalized();
 
+        // create orthonormal basis fro the normal
+        Vec3 arbitrary = normal.x < .9 ? Vec3(1,0,0) : Vec3(0,1,0);
+        Vec3 tangent = normal.cross(arbitrary).normalized();
+        Vec3 bitangent = normal.cross(tangent).normalized();
 
-        // should we bounce off or pass through?
+        // rewrite the ray in terms of the orthonormal basis
+        Vec3 tangentRayDirection = (direction.x * tangent + direction.y * normal + direction.z * bitangent).normalized();
+
+        float u1 = randUniform(localSeed);
+        float u2 = randUniform(localSeed);
+
         if (u1 < material.transmission) {
-            // pass through
-
+            // we need to refract
+            // snels law: ni*sin(thetai) = nr*sin(thetar)
+            // thetar = arcsin(ni*sin(thetai)/nr)
+            float ni = 1.0f; // air
+            
+            // apply snels law in i direction
+            float iThetaI = std::acos(Vec3(0,1,0).dot(tangentRayDirection));
+            float iThetaR = std::asin(ni*std::sin(iThetaI)/material.IOR);
         } else {
-            // reflect
-            // should we diffuse reflect or specular reflect
-            if (u2 < material.metallic) {
-                
+            // we need to reflect
+            if (u2 < material.roughness) {
+                // diffuse reflect
             } else {
-
+                // mirror reflect
             }
         }
     }
+
 };

@@ -9,13 +9,17 @@ struct Material {
     float transmission;
     float IOR;
     float roughness;
-    float metallic;
 
     float emission;
 
-    Map texture;
+    Map textureMap;
+    Map normalMap;
 
     Vec3 getAlbedo(float u, float v) const {
-        return texture.sample(u, v);
+        return textureMap.sample(u, v);
+    }
+
+    Vec3 getNormalOffset(float u, float v) const {
+        return normalMap.sample(u, v);
     }
 };

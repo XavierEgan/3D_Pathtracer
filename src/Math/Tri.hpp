@@ -26,6 +26,6 @@ struct Tri {
     }
 
     Vec3 normal() const {
-        return (v0 - v1).cross(v0 - v2);
+        return (v0 - v1).cross(v0 - v2).normalized();
     }
 };
