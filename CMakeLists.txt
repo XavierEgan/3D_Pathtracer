@@ -25,7 +25,16 @@ find_package(CUDAToolkit REQUIRED)
 
 add_executable(
     d
-    src/main.cpp
+    #src/main.cpp
+    src/Pathtracer.cu
+)
+
+target_include_directories(
+    d
+    PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Math
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Misc
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Ext
 )
 
 target_link_libraries(d CUDA::cudart)

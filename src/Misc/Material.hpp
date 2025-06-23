@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "../Math/Vec3.hpp"
+#include "../Math/Vec3.cuh"
 #include "Map.hpp"
 
 struct Material {
@@ -15,11 +15,11 @@ struct Material {
     Map textureMap;
     Map normalMap;
 
-    Vec3 getAlbedo(float u, float v) const {
+    __host__ __device__ Vec3 getAlbedo(float u, float v) const {
         return textureMap.sample(u, v);
     }
 
-    Vec3 getNormalOffset(float u, float v) const {
+    __host__ __device__ Vec3 getNormalOffset(float u, float v) const {
         return normalMap.sample(u, v);
     }
 };
