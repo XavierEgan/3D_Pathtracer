@@ -17,7 +17,7 @@ struct Scene {
     
     Scene(Camera camera, Environment environment);
 
-    /* NOTE TO USER: DONT FUCKING OVERFLOW THIS OR I WILL DISEMBOWEL YOU */
+    /* NOTE TO USER: DONT OVERFLOW THIS */
     void allocMaterials(size_t materialsCap) {
         size_t size = materialsCap * sizeof(Material);
 

@@ -208,8 +208,8 @@ struct Vec3 {
         return *this / this->length();
     }
 
-    __host__ __device__ Vec3& epsilonShift() {
-        *this += 1e-4f;
-        return *this;
+    __host__ __device__ Vec3 epsilonShift(const Vec3& dir) const {
+        // dir should be normalised
+        return *this + dir * 1e-4f;
     }
 };

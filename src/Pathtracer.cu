@@ -87,11 +87,26 @@ __global__ void getPixelColorKernal(ScreenBuffer screenBuffer, Scene scene, Path
 int main(void) {
     Camera camera = Camera(Vec3(), Vec3(0,1,0), ScreenParams(128, 128, 128, 16, 3.1415f/2, 3.1415f, 1.0f));
 
+    Vec3 
+    tlf, blf,
+    tlb, blb,
+    trf, brf,
+    trb, brb;
+    tlf = (Vec3){-1.0f, 1.0f, -1.0f}; // top left front corner
+    blf = (Vec3){-1.0f, -1.0f, -1.0f}; // bottom left front corner
 
+    tlb = (Vec3){1.0f, 1.0f, -1.0f}; // top left back corner
+    blb = (Vec3){1.0f, -1.0f, -1.0f}; // bottom left back corner
 
-    Mesh mesh1 = Mesh(
-        
-    )
+    trf = (Vec3){-1.0f, 1.0f, 1.0f}; // top right front corner
+    brf = (Vec3){-1.0f, -1.0f, 1.0f}; // bottom right front corner
+
+    trb = (Vec3){1.0f, 1.0f, 1.0f}; // top right back corner
+    brb = (Vec3){1.0f, -1.0f, 1.0f}; // bottom right back corner
+
+    // std::vector<Tri> leftWallTris = std::vector<Tri>();
+    // leftWallTris.push_back()
+    // Mesh leftWall = Mesh();
 
     return 0;
 }
