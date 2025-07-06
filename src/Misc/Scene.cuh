@@ -15,13 +15,26 @@ struct Scene {
     Camera camera;
     Environment environment;
     
-    Scene(Camera camera, Environment environment);
+    Scene(Camera camera, Environment environment) : camera(camera), environment(environment) {}
 
-    /* NOTE TO USER: DONT OVERFLOW THIS */
+    /* DONT OVERFLOW THIS */
     void allocMaterials(size_t materialsCap) {
         size_t size = materialsCap * sizeof(Material);
 
-        cudaMalloc(&materials, size);
+        malloc(&materials, size);
+
+        numMaterials = 0;
+    }
+
+    /* MUST BE CALLED BEFORE RENDER */
+    void allocMaterials(size_t materialsCap) {
+        size_t size = materialsCap * sizeof(Material);
+
+        Material* cudaMaterials
+
+        cudaMalloc(&cudaMaterials, size);
+
+        cudaMemcpy()
 
         numMaterials = 0;
     }
@@ -31,7 +44,9 @@ struct Scene {
     }
 
     uint16_t registerMaterial(Material material) {
+        std::cout << "here" << std::endl;
         materials[numMaterials] = material;
+        std::cout << "there" << std::endl;
         numMaterials++;
         return numMaterials;
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.hpp"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../Ext/stb_image_write.h"
 
 struct ScreenBuffer {
@@ -30,7 +31,9 @@ struct ScreenBuffer {
     }
 
     void writeImage(char* fileLoc) {
+        std::cout << "Writing Image" << std::endl;
         const int maxQuality = 100;
         stbi_write_jpg(fileLoc, width, height, 3, data, maxQuality);
+        std::cout << "Image Written To " << fileLoc << std::endl;
     }
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <cstdlib>
+#include <iostream>
 
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
@@ -23,6 +24,7 @@ struct Pathtracer {
     Pathtracer(Scene scene) : scene(scene) {}
 
     void render(char* outFile) {
+        std::cout << "Rendering Image Now" << std::endl;
         // make a buffer to write to
         ScreenBuffer buffer = ScreenBuffer(scene.camera.screenParams);
 
@@ -39,7 +41,7 @@ struct Pathtracer {
 
         getPixelColorKernal<<<gridSize, blockSize>>>(buffer, scene, *this);
 
-        buffer.writeImage("test_image");
+        buffer.writeImage(outFile);
     }
 };
 
@@ -85,28 +87,76 @@ __global__ void getPixelColorKernal(ScreenBuffer screenBuffer, Scene scene, Path
 }
 
 int main(void) {
-    Camera camera = Camera(Vec3(), Vec3(0,1,0), ScreenParams(128, 128, 128, 16, 3.1415f/2, 3.1415f, 1.0f));
-
+    std::cout << "main" << std::endl;
     Vec3 
     tlf, blf,
     tlb, blb,
     trf, brf,
     trb, brb;
-    tlf = (Vec3){-1.0f, 1.0f, -1.0f}; // top left front corner
-    blf = (Vec3){-1.0f, -1.0f, -1.0f}; // bottom left front corner
+    tlf = Vec3(-1.0f, 1.0f, -1.0f); // top left front corner
+    blf = Vec3(-1.0f, -1.0f, -1.0f); // bottom left front corner
 
-    tlb = (Vec3){1.0f, 1.0f, -1.0f}; // top left back corner
-    blb = (Vec3){1.0f, -1.0f, -1.0f}; // bottom left back corner
+    tlb = Vec3(1.0f, 1.0f, -1.0f); // top left back corner
+    blb = Vec3(1.0f, -1.0f, -1.0f); // bottom left back corner
 
-    trf = (Vec3){-1.0f, 1.0f, 1.0f}; // top right front corner
-    brf = (Vec3){-1.0f, -1.0f, 1.0f}; // bottom right front corner
+    trf = Vec3(-1.0f, 1.0f, 1.0f); // top right front corner
+    brf = Vec3(-1.0f, -1.0f, 1.0f); // bottom right front corner
 
-    trb = (Vec3){1.0f, 1.0f, 1.0f}; // top right back corner
-    brb = (Vec3){1.0f, -1.0f, 1.0f}; // bottom right back corner
+    trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
+    brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    // std::vector<Tri> leftWallTris = std::vector<Tri>();
-    // leftWallTris.push_back()
-    // Mesh leftWall = Mesh();
+    const unsigned int width = 128;
+    const unsigned int height = 128;
+    const float verticalFov = (3.1415/180);
+    const float horizontalFov = (3.1415/180);
+    const float focalLength = 1.0f;
+    const unsigned int rayPerPixel = 128;
+    const unsigned int maxBounces = 8;
+
+    std::cout << "cam" << std::endl;
+
+    Camera camera = Camera(
+        Vec3(),
+        Vec3(0,1,0),
+        ScreenParams(
+            width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces
+        )
+    );
+
+    Environment environment = Environment(Vec3(0x82 / 255.0f, 0xC8 / 255.0f, 0xE5 / 255.0f));
+    Scene scene = Scene(camera, environment);
+
+    std::cout << "foo" << std::endl;
+
+    scene.allocMaterials(100); // we can have up to 100 materials
+
+    std::cout << "bar" << std::endl;
+
+    unsigned int leftWallMatID = scene.registerMaterial(
+        Material(
+            0, 1, 1, 0, Map(Vec3(1, 0, 0))
+        )
+    );
+    std::cout << "bash" << std::endl;
+    std::vector<Tri> leftWallTris = {
+        Tri(tlb, blf, blb, leftWallMatID), 
+        Tri(tlb, tlf, blf, leftWallMatID)
+    };
+    Mesh leftWall = Mesh(leftWallTris);
+
+    unsigned int backWallMatID = scene.registerMaterial(
+        Material(
+            0, 1, 1, 0, Map(Vec3(0, 1, 0))
+        )
+    );
+    std::vector<Tri> backWallTris = {
+        Tri(tlb,brb, trb, backWallMatID), 
+        Tri(tlb, blb, brb, backWallMatID)
+    };
+    Mesh backWall = Mesh(leftWallTris);
+    
+    Pathtracer pathtracer = Pathtracer(scene);
+    pathtracer.render((char*)"test");
 
     return 0;
 }

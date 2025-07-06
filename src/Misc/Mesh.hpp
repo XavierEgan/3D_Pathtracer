@@ -6,7 +6,6 @@
 
 struct Mesh {
     std::vector<Tri> tris;
-    unsigned int materialId;
 
-    Mesh(std::vector<Tri> tris, unsigned int materialId) : tris(tris), materialId(materialId) {}
+    Mesh(std::vector<Tri> tris) : tris(tris) {}
 };

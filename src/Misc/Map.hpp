@@ -11,7 +11,15 @@ struct Map {
     int height;
     int channels;
 
-    Map() {}
+    Map() : width(1), height(1) {}
+
+    Map(const Vec3& vec) : width(1), height(1), channels(3) {
+        // should just be a 1x1 of a single color
+        data = (unsigned char*)malloc(sizeof(char) * 3);
+        data[0] = (char)(vec.x * 255);
+        data[1] = (char)(vec.y * 255);
+        data[2] = (char)(vec.z * 255);
+    }
 
     void getDataFromFile(char* fileLoc) {
         unsigned char* fileData = stbi_load(fileLoc, &width, &height, &channels, 0);

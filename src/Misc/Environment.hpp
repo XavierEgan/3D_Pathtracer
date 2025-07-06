@@ -6,4 +6,6 @@
 
 struct Environment {
     Vec3 skyColor;
+
+    Environment(Vec3 skyColor) : skyColor(skyColor) {}
 };

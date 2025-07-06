@@ -4,7 +4,6 @@
     Written by Xavier Egan 2025
 */
 
-#include <cuda_runtime.h>
 #include <iostream>
 #include <type_traits>
 #include <optional>
