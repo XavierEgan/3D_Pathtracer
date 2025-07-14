@@ -13,7 +13,6 @@
 #include "Tri.cuh"
 #include "rand.cuh"
 #include "Transform3D.cuh"
-#include "../Misc/Scene.cuh"
 
 struct TriHit {
     Vec3 intersecPoint;
@@ -46,17 +45,25 @@ struct Ray {
 
     __host__ __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
     __host__ __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __host__ __device__ Ray(float planeX, float planeY, const Scene& scene, unsigned int& seed) {
+    __host__ __device__ Ray(int planeX, int planeY, const Scene& scene, unsigned int& seed) {
         float u1 = randUniform(seed);
         float u2 = randUniform(seed);
 
-        direction = scene.camera.forward * scene.camera.screenParams.focalLength 
-            + scene.camera.up * (planeY + u1 * scene.camera.screenParams.pxHeight) 
-            + scene.camera.right * (planeX + u2 * scene.camera.screenParams.pxWidth);
+        // printf("A: %d\nB: %d\nC: %d\n", (scene.camera.screenParams.height/2) - planeY, planeY, scene.camera.screenParams.height);
+
+        Vec3 forwardComponent = scene.camera.forward * scene.camera.screenParams.focalLength;
+        Vec3 upComponent = scene.camera.up * (((scene.camera.screenParams.height/2) - planeY) * scene.camera.screenParams.pxHeight + u1 * scene.camera.screenParams.pxHeight);
+        Vec3 rightComponent = scene.camera.right * (-((scene.camera.screenParams.width/2) - planeX) * scene.camera.screenParams.pxWidth + u2 * scene.camera.screenParams.pxWidth);
+
+        direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = scene.camera.pos;
+
+        // forwardComponent.print("forwardComponent");
+        // upComponent.print("upComponent");
+        // rightComponent.print("rightComponent");
     }
 
-    __host__ __device__ TriHit rayTriIntercept(const Tri& tri) const {
+    __device__ TriHit rayTriIntercept(const Tri& tri) const {
         //Möller–Trumbore intersection algorithm
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
@@ -91,7 +98,7 @@ struct Ray {
         }
     }
 
-    __host__ __device__ TriHit getTriIntersection(TriBuffer tris) const {
+    __device__ TriHit getTriIntersection(TriBuffer tris) const {
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;
@@ -119,7 +126,7 @@ struct Ray {
         }
     }
 
-    __host__ __device__ void bsdfReflect(const Material& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo, Vec3& runningEmission) {
+    __device__ void bsdfReflect(const Material& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
         /*
             i = tangent
             j = bitangent
@@ -139,10 +146,6 @@ struct Ray {
         // prod the albedo
         Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
         runningAlbedo *= triAlbedo;
-
-        // sum the emisison
-        Vec3 triEmission = triAlbedo * material.emission;
-        runningEmission += triEmission;
 
         // get tri normal
         Vec3 g_edge1 = triHit.tri.v1 - triHit.tri.v0;

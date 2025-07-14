@@ -9,53 +9,38 @@
 
 struct Scene {
     std::vector<Mesh> meshs;
-    Material* materials;
-    size_t numMaterials;
+    std::vector<Material> materials;
+
+    Material* deviceMaterials;
 
     Camera camera;
     Environment environment;
     
     Scene(Camera camera, Environment environment) : camera(camera), environment(environment) {}
 
-    /* DONT OVERFLOW THIS */
-    void allocMaterials(size_t materialsCap) {
-        size_t size = materialsCap * sizeof(Material);
-
-        malloc(&materials, size);
-
-        numMaterials = 0;
-    }
-
-    /* MUST BE CALLED BEFORE RENDER */
-    void allocMaterials(size_t materialsCap) {
-        size_t size = materialsCap * sizeof(Material);
-
-        Material* cudaMaterials
-
-        cudaMalloc(&cudaMaterials, size);
-
-        cudaMemcpy()
-
-        numMaterials = 0;
-    }
-
     void registerMesh(Mesh mesh) {
         meshs.push_back(mesh);
     }
 
     uint16_t registerMaterial(Material material) {
-        std::cout << "here" << std::endl;
-        materials[numMaterials] = material;
-        std::cout << "there" << std::endl;
-        numMaterials++;
-        return numMaterials;
+        materials.push_back(material);
+        return materials.size() - 1;
     }
 
-    __host__ __device__ Material& getMaterial(uint16_t materialID) {
-        return materials[materialID];
+    __host__ void materialsToDevice() {
+        for (Material m : materials) {
+            m.mapsToDevice();
+        }
+        
+        cudaMalloc(&deviceMaterials, sizeof(Material) * materials.size());
+        cudaMemcpy(deviceMaterials, materials.data(), sizeof(Material) * materials.size(), cudaMemcpyHostToDevice);
     }
 
-    TriBuffer getTris() {
+    __device__ Material& getMaterial(uint16_t materialID) {
+        return deviceMaterials[materialID];
+    }
+
+    TriBuffer getTrisOnDevice() {
         // get all the tris together
         std::vector<Tri> trisVec = std::vector<Tri>();
         for(Mesh mesh : meshs) {
@@ -69,7 +54,7 @@ struct Scene {
         cudaMalloc(&tris, size);
         cudaMemcpy(tris, trisVec.data(), size, cudaMemcpyHostToDevice);
 
-        return TriBuffer(tris, size);
+        return TriBuffer(tris, trisVec.size());
     }
 
     void freeTris(Tri* tris) {

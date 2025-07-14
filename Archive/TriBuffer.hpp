@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/Tri.cuh"
+#include <vector>
 
 struct TriBuffer {
     Tri* tris;
@@ -9,7 +10,7 @@ struct TriBuffer {
     TriBuffer() {}
     TriBuffer(Tri* tris, size_t size) : tris(tris), size(size) {}
 
-    __host__ __device__ Tri operator[](size_t index) {
+    __device__ Tri operator[](size_t index) {
         if (index < size) {
             return tris[index];
         } else {

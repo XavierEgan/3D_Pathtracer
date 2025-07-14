@@ -12,9 +12,18 @@ struct ScreenBuffer {
 
     ScreenBuffer(ScreenParams screenParams) : data(nullptr), width(screenParams.width), height(screenParams.height) {}
 
-    void allocData() {
+    void deviceMalloc() {
         size_t size = width * height * 3 * sizeof(char);
         cudaMalloc(&data, size);
+    }
+
+    void transferDeviceHost() {
+        size_t size = width * height * 3 * sizeof(char);
+        char* hostData = (char*)malloc(size);
+        cudaMemcpy(hostData, data, size, cudaMemcpyDeviceToHost);
+
+        // yes, this does cause a GPU memory leak im pretty sure, but also its at the end of the program so should clean up fine
+        data = hostData;
     }
 
     void free() {

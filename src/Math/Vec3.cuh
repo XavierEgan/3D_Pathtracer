@@ -6,9 +6,9 @@
     Also uses old style ::value instead of _v coz its better for learning
 */
 
-#include <cuda_runtime.h>
 #include <iostream>
 #include <type_traits>
+#include <string>
 
 struct Vec3 {
     float x;
@@ -16,8 +16,14 @@ struct Vec3 {
     float z;
 
     __host__ __device__ Vec3() : x(0), y(0), z(0) {}
-    __host__ __device__ Vec3(const Vec3& vec) : x(vec.x), y(vec.y), z(vec.z){}
     __host__ __device__ Vec3(float x, float y, float z) : x(x), y(y), z(z) {}
+
+    __host__ __device__ void print() const {
+        printf("(%f,%f,%f)\n", x, y, z);
+    }
+    __host__ __device__ void print(const char* name) const {
+        printf("%s: (%f,%f,%f)\n", name, x, y, z);
+    }
 
     // + overrite
     template<typename T>
