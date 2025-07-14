@@ -5,5 +5,5 @@ Identifies the same material between HostMaterialManager and DeviceMaterialManag
 */
 struct MaterialID {
     unsigned int materialID;
-    MaterialID(unsigned int materialID) : materialID(materialID) {}
+    __host__ __device__ MaterialID(unsigned int materialID) : materialID(materialID) {}
 };

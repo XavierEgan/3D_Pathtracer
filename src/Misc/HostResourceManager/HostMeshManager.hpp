@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
 #include "HostMesh.hpp"
 
 class HostMeshManager {
@@ -15,7 +14,7 @@ public:
         meshs.push_back(hostMesh);
     }
 
-    std::vector<HostMesh> getMeshs() {
+    std::vector<HostMesh> getMeshs() const {
         return meshs;
     }
 };

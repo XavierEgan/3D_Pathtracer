@@ -11,8 +11,8 @@ class DeviceMap {
     unsigned int channels;
 
 public:
-    DeviceMap() = delete;
-    DeviceMap(const HostMap& hostMap) {
+    __host__ DeviceMap() = delete;
+    __host__ DeviceMap(const HostMap& hostMap) {
         mapWidth = hostMap.getWidth();
         mapHeight = hostMap.getHeight();
         channels = hostMap.getChannels();
@@ -30,15 +30,24 @@ public:
             printf("Error in DeviceMap cudaMemcpy");
         }
     }
-    ~DeviceMap() {
+    __host__ ~DeviceMap() {
         cudaFree(mapData);
     }
-    DeviceMap(const DeviceMap& deviceMap) = delete;
-    DeviceMap(DeviceMap&& deviceMap) = delete;
-    DeviceMap& operator=(const DeviceMap& deviceMap) = delete;
-    DeviceMap& operator=(DeviceMap&& deviceMap) = delete;
+    __host__ DeviceMap(const DeviceMap& deviceMap) = delete;
+    __host__ DeviceMap(DeviceMap&& deviceMap) : mapData(deviceMap.mapData), mapWidth(deviceMap.mapWidth), mapHeight(deviceMap.mapHeight), channels(deviceMap.channels) {
+        deviceMap.mapData = nullptr;
+    }
+    __host__ DeviceMap& operator=(const DeviceMap& deviceMap) = delete;
+    __host__ DeviceMap& operator=(DeviceMap&& deviceMap) {
+        mapData = deviceMap.mapData;
+        mapWidth = deviceMap.mapWidth;
+        mapHeight = deviceMap.mapHeight;
+        channels = deviceMap.channels;
+        deviceMap.mapData = nullptr;
+        return *this;
+    }
 
-    Vec3 sample(float u, float v) {
+    __device__ Vec3 sample(float u, float v) const {
         int x = static_cast<int>(u * mapWidth);
         int y = static_cast<int>(v * mapHeight);
         int index = (y * mapWidth + x) * channels;

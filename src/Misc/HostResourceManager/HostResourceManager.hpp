@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
 #include "HostMaterialManager.hpp"
 #include "HostMeshManager.hpp"
 

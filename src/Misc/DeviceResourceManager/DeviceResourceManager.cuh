@@ -2,17 +2,23 @@
 
 #include <vector>
 #include "../Math/Tri.cuh"
+#include "../HostResourceManager/HostResourceManager.hpp"
+#include "../Camera.hpp"
+
 #include "DeviceMaterialManager.cuh"
 #include "DeviceTriBuffer.cuh"
-#include "HostResourceManager/HostResourceManager.hpp"
+#include "DeviceScreenBuffer.cuh"
 
 class DeviceResourceManager {
 public:
     DeviceMaterialManager deviceMaterialManager;
-    DeviceTriBuffer deviceMeshManager;
-    DeviceResourceManager() = delete;
-    DeviceResourceManager(const HostResourceManager& hostResourceManager) : 
+    DeviceTriBuffer deviceTriBuffer;
+    DeviceScreenBuffer deviceScreenBuffer;
+
+    __host__ DeviceResourceManager() = delete;
+    __host__ DeviceResourceManager(const HostResourceManager& hostResourceManager, const ScreenParams& screenParams) : 
         deviceMaterialManager(DeviceMaterialManager(hostResourceManager.hostMaterialManager)),
-        deviceMeshManager(DeviceTriBuffer(hostResourceManager.hostMeshManager))
+        deviceTriBuffer(DeviceTriBuffer(hostResourceManager.hostMeshManager)),
+        deviceScreenBuffer(DeviceScreenBuffer(screenParams))
     {}
 };

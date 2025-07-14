@@ -14,6 +14,8 @@
 #include "rand.cuh"
 #include "Transform3D.cuh"
 
+#include "../Misc/DeviceResourceManager/DeviceResourceManager.cuh"
+
 struct TriHit {
     Vec3 intersecPoint;
     float dist;
@@ -45,18 +47,18 @@ struct Ray {
 
     __host__ __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
     __host__ __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __host__ __device__ Ray(int planeX, int planeY, const Scene& scene, unsigned int& seed) {
+    __host__ __device__ Ray(int planeX, int planeY, const DeviceResourceManager& scene, const Camera& camera, unsigned int& seed) {
         float u1 = randUniform(seed);
         float u2 = randUniform(seed);
 
-        // printf("A: %d\nB: %d\nC: %d\n", (scene.camera.screenParams.height/2) - planeY, planeY, scene.camera.screenParams.height);
+        // printf("A: %d\nB: %d\nC: %d\n", (camera.screenParams.height/2) - planeY, planeY, camera.screenParams.height);
 
-        Vec3 forwardComponent = scene.camera.forward * scene.camera.screenParams.focalLength;
-        Vec3 upComponent = scene.camera.up * (((scene.camera.screenParams.height/2) - planeY) * scene.camera.screenParams.pxHeight + u1 * scene.camera.screenParams.pxHeight);
-        Vec3 rightComponent = scene.camera.right * (-((scene.camera.screenParams.width/2) - planeX) * scene.camera.screenParams.pxWidth + u2 * scene.camera.screenParams.pxWidth);
+        Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
+        Vec3 upComponent = camera.up * (((camera.screenParams.height/2) - planeY) * camera.screenParams.pxHeight + u1 * camera.screenParams.pxHeight);
+        Vec3 rightComponent = camera.right * (-((camera.screenParams.width/2) - planeX) * camera.screenParams.pxWidth + u2 * camera.screenParams.pxWidth);
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
-        origin = scene.camera.pos;
+        origin = camera.pos;
 
         // forwardComponent.print("forwardComponent");
         // upComponent.print("upComponent");
@@ -98,13 +100,13 @@ struct Ray {
         }
     }
 
-    __device__ TriHit getTriIntersection(TriBuffer tris) const {
+    __device__ TriHit getTriIntersection(const DeviceResourceManager& deviceResourceManager) const {
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;
 
-        for (int i = 0; i < tris.size; i++) {
-            const Tri tri = tris[i];
+        for (int i = 0; i < deviceResourceManager.deviceTriBuffer.numTris; i++) {
+            const Tri& tri = deviceResourceManager.deviceTriBuffer.tris[i];
 
             TriHit triHit = this->rayTriIntercept(tri);
 
@@ -126,7 +128,7 @@ struct Ray {
         }
     }
 
-    __device__ void bsdfReflect(const Material& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
+    __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
         /*
             i = tangent
             j = bitangent

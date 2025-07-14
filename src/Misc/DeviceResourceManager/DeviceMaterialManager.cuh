@@ -12,8 +12,8 @@ class DeviceMaterialManager {
     size_t numMaterials;
 
 public:
-    DeviceMaterialManager() = delete;
-    DeviceMaterialManager(const HostMaterialManager& hostMaterialManager) {
+    __host__ DeviceMaterialManager() = delete;
+    __host__ DeviceMaterialManager(const HostMaterialManager& hostMaterialManager) {
         const std::vector<HostMaterial> hostMaterials = hostMaterialManager.getMaterials();
         numMaterials = hostMaterials.size();
 
@@ -29,16 +29,20 @@ public:
             printf("ERROR in cudaMalloc in DeviceMaterialManager");
         }
 
-        cudaError_t err = cudaMemcpy(materials, deviceMaterials.data(), size, cudaMemcpyHostToDevice);
+        err = cudaMemcpy(materials, deviceMaterials.data(), size, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             printf("ERROR in cudaMemcpy in DeviceMaterialManager");
         }
     }
-    ~DeviceMaterialManager() {
+    __host__ ~DeviceMaterialManager() {
         cudaFree(materials);
     }
-    DeviceMaterialManager(const DeviceMaterialManager& deviceMaterialManager) = delete;
-    DeviceMaterialManager(DeviceMaterialManager&& deviceMaterialManager) = delete;
-    DeviceMaterialManager& operator=(const DeviceMaterialManager& deviceMaterialManager) = delete;
-    DeviceMaterialManager& operator=(DeviceMaterialManager&& deviceMaterialManager) = delete;
+    __host__ DeviceMaterialManager(const DeviceMaterialManager& deviceMaterialManager) = delete;
+    __host__ DeviceMaterialManager(DeviceMaterialManager&& deviceMaterialManager) = delete;
+    __host__ DeviceMaterialManager& operator=(const DeviceMaterialManager& deviceMaterialManager) = delete;
+    __host__ DeviceMaterialManager& operator=(DeviceMaterialManager&& deviceMaterialManager) = delete;
+
+    __device__ DeviceMaterial& getMaterial(MaterialID materialID) const {
+        return materials[materialID.materialID];
+    }
 };

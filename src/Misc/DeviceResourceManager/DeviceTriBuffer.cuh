@@ -5,16 +5,18 @@
 #include "../HostResourceManager/HostMeshManager.hpp"
 
 class DeviceTriBuffer {
+public:
     Tri* tris;
     size_t numTris;
-
-public:  
-    DeviceTriBuffer() = delete;
-    DeviceTriBuffer(const HostMeshManager hostMeshManager) {
+    
+    __host__ DeviceTriBuffer() = delete;
+    __host__ DeviceTriBuffer(const HostMeshManager& hostMeshManager) {
         std::vector<Tri> hostTris;
 
         for (HostMesh hm : hostMeshManager.getMeshs()) {
-            hostTris.insert(hostTris.end(), hm.getTris().begin(), hm.getTris().end());
+            for (const Tri& t : hm.getTris()) {
+                hostTris.push_back(t);
+            }
         }
 
         numTris = hostTris.size();
@@ -30,11 +32,11 @@ public:
             printf("ERROR cudaMemcpy failed in DeviceTriBuffer");
         }
     }
-    ~DeviceTriBuffer() {
+    __host__ ~DeviceTriBuffer() {
         cudaFree(tris);
     }
-    DeviceTriBuffer(const DeviceTriBuffer& deviceTriBuffer) = delete;
-    DeviceTriBuffer(DeviceTriBuffer&& deviceTriBuffer) = delete;
-    DeviceTriBuffer& operator=(const DeviceTriBuffer& deviceTriBuffer) = delete;
-    DeviceTriBuffer& operator=(DeviceTriBuffer&& deviceTriBuffer) = delete;
+    __host__ DeviceTriBuffer(const DeviceTriBuffer& deviceTriBuffer) = delete;
+    __host__ DeviceTriBuffer(DeviceTriBuffer&& deviceTriBuffer) = delete;
+    __host__ DeviceTriBuffer& operator=(const DeviceTriBuffer& deviceTriBuffer) = delete;
+    __host__ DeviceTriBuffer& operator=(DeviceTriBuffer&& deviceTriBuffer) = delete;
 };

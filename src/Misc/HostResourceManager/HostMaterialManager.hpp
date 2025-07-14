@@ -3,7 +3,6 @@
 #include <vector>
 
 #include "../MaterialID.hpp"
-#include "../Math/Tri.cuh"
 #include "HostMaterial.hpp"
 
 class HostMaterialManager {
