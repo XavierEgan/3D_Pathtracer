@@ -20,6 +20,7 @@ public:
         }
 
         numTris = hostTris.size();
+        printf("numTris: %d\n", numTris);
 
         size_t size = hostTris.size() * sizeof(Tri);
         cudaError_t err = cudaMalloc(&tris, size);

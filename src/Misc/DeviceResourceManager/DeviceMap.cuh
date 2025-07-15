@@ -17,15 +17,21 @@ public:
         mapHeight = hostMap.getHeight();
         channels = hostMap.getChannels();
 
+        std::vector<unsigned char> hostData = hostMap.getData();
+
+        //printf("%d, %d, %d\n", hostData[0], hostData[1], hostData[2]); // gives 255,0,0
+
         size_t size = mapWidth * mapHeight * channels * sizeof(unsigned char);
         cudaError_t err = cudaMalloc(&mapData, size);
         if (err != cudaSuccess) {
             printf("Error in DeviceMap cudaMalloc");
         }
 
-        unsigned char* hostDataPointer = hostMap.getData().data();
+        unsigned char* hostDataPointer = hostData.data();
 
-        err = cudaMemcpy((void*)mapData, (void*)hostDataPointer, size, cudaMemcpyHostToDevice);
+        //printf("First pixel in host data: %d, %d, %d\n", hostDataPointer[0], hostDataPointer[1], hostDataPointer[2]);
+
+        err = cudaMemcpy(mapData, hostDataPointer, size, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {
             printf("Error in DeviceMap cudaMemcpy");
         }
@@ -51,12 +57,15 @@ public:
         int x = static_cast<int>(u * mapWidth);
         int y = static_cast<int>(v * mapHeight);
         int index = (y * mapWidth + x) * channels;
-
-        return Vec3(
+        Vec3 ret = Vec3(
             mapData[index] / 255.0f,
             mapData[index + 1] / 255.0f,
             mapData[index + 2] / 255.0f
         );
+        //ret.print("Color: ");
+        //printf("%d, %d, %d\n", mapData[index], mapData[index + 1], mapData[index + 2]);
+        //printf("%d, %d\n", x, y);
+        return ret;
     }
 };
 

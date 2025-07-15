@@ -45,24 +45,26 @@ struct Ray {
     Vec3 direction;
     Vec3 origin;
 
-    __host__ __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
-    __host__ __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __host__ __device__ Ray(int planeX, int planeY, const DeviceResourceManager& scene, const Camera& camera, unsigned int& seed) {
+    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
+    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
+    __device__ Ray(int planeX, int planeY, const DeviceResourceManager* scene, const Camera& camera, unsigned int& seed) {
         float u1 = randUniform(seed);
         float u2 = randUniform(seed);
 
-        // printf("A: %d\nB: %d\nC: %d\n", (camera.screenParams.height/2) - planeY, planeY, camera.screenParams.height);
-
         Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
-        Vec3 upComponent = camera.up * (((camera.screenParams.height/2) - planeY) * camera.screenParams.pxHeight + u1 * camera.screenParams.pxHeight);
-        Vec3 rightComponent = camera.right * (-((camera.screenParams.width/2) - planeX) * camera.screenParams.pxWidth + u2 * camera.screenParams.pxWidth);
+        Vec3 upComponent = camera.up * (((camera.screenParams.height/2) - planeY) + u1) * camera.screenParams.pxHeight;
+        Vec3 rightComponent = camera.right * (-((camera.screenParams.width/2) - planeX) + u2) * camera.screenParams.pxWidth;
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = camera.pos;
 
-        // forwardComponent.print("forwardComponent");
-        // upComponent.print("upComponent");
-        // rightComponent.print("rightComponent");
+        printf("x:%d, y:%d -- RayDir:(%f, %f, %f) -- Quadrant%d\n -- halfHeight:%d, halfWidth:%d", 
+            planeX, planeY, 
+            direction.x, direction.y, direction.z, 
+            planeY<camera.screenParams.height/2 ? (planeX < camera.screenParams.width/2 ? 2 : 1) : (planeX < camera.screenParams.width/2 ? 3 : 4),
+            (camera.screenParams.height/2),
+            (camera.screenParams.height/2)
+        );
     }
 
     __device__ TriHit rayTriIntercept(const Tri& tri) const {
@@ -100,13 +102,13 @@ struct Ray {
         }
     }
 
-    __device__ TriHit getTriIntersection(const DeviceResourceManager& deviceResourceManager) const {
+    __device__ TriHit getTriIntersection(const DeviceResourceManager* deviceResourceManager) const {
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;
 
-        for (int i = 0; i < deviceResourceManager.deviceTriBuffer.numTris; i++) {
-            const Tri& tri = deviceResourceManager.deviceTriBuffer.tris[i];
+        for (int i = 0; i < deviceResourceManager->deviceTriBuffer.numTris; i++) {
+            const Tri& tri = deviceResourceManager->deviceTriBuffer.tris[i];
 
             TriHit triHit = this->rayTriIntercept(tri);
 

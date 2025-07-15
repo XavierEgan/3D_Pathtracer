@@ -32,6 +32,7 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Math
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Misc
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Ext
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Kernels
 )
 
 target_link_libraries(d CUDA::cudart)

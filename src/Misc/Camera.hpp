@@ -21,12 +21,15 @@ struct ScreenParams {
     float pxWidth;
 
     ScreenParams(unsigned int width, unsigned int height, float verticalFov, float horizontalFov, float focalLength, unsigned int rayPerPixel, unsigned int maxBounces) : width(width), height(height), verticalFov(verticalFov), horizontalFov(horizontalFov), focalLength(focalLength), rayPerPixel(rayPerPixel), maxBounces(maxBounces) {
-        verticalHalfScale = std::abs(std::tan(verticalFov) * focalLength);
-        horizontalHalfScale = std::abs(std::tan(horizontalFov) * focalLength);
+        verticalHalfScale = std::abs(std::tan(verticalFov * 0.5f) * focalLength);
+        horizontalHalfScale = std::abs(std::tan(horizontalFov * 0.5f) * focalLength);
 
         pxHeight = (verticalHalfScale * 2.0f) / height;
 
         pxWidth = (horizontalHalfScale * 2.0f) / width;
+
+        printf("verticalHalfScale: %f\n", verticalHalfScale);
+        printf("horizontalHalfScale: %f\n", horizontalHalfScale);
     }
 };
 
@@ -44,5 +47,11 @@ struct Camera {
 
         // up is the cross between right a forward in that order
         up = (right.cross(forward.normalized())).normalized();
+
+        forward.print("Camera forward");
+        right.print("Camera right");
+        up.print("Camera up");
+        pos.print("Camera Pos");
+        
     }
 };
