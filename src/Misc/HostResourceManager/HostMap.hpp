@@ -14,9 +14,12 @@ public:
     HostMap(const Vec3& color) : mapWidth(1), mapHeight(1), channels(3) {
         mapData = std::vector<unsigned char>();
         mapData.reserve(3);
-        mapData.emplace_back(static_cast<int>(color.x * 255));
-        mapData.emplace_back(static_cast<int>(color.y * 255));
-        mapData.emplace_back(static_cast<int>(color.z * 255));
+        mapData.push_back(static_cast<unsigned char>(color.x * 255));
+        mapData.push_back(static_cast<unsigned char>(color.y * 255));
+        mapData.push_back(static_cast<unsigned char>(color.z * 255));
+
+        
+        
     }
     
     unsigned int getWidth() const {

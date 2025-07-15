@@ -1,6 +1,15 @@
 #pragma once
 
-__global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager, Camera camera) {
+#include "../Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
+#include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
+#include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
+#include "../Misc/HostResourceManager/HostResourceManager.hpp"
+
+__global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManagerPointer, DeviceTriBuffer* deviceTriBufferPointer, DeviceScreenBuffer* deviceScreenBufferPointer,  Camera camera) {
+    DeviceMaterialManager& deviceMaterialManager = *deviceMaterialManagerPointer;
+    DeviceTriBuffer& deviceTriBuffer = *deviceTriBufferPointer;
+    DeviceScreenBuffer& deviceScreenBuffer = *deviceScreenBufferPointer;
+    
     //printf("textureMap: %p\n", scene.deviceMaterials[1].textureMap.data);
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -10,6 +19,12 @@ __global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager
         return;
     }
 
+    // if (x == 0 && y == 0) {
+    //     for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
+    //         deviceTriBuffer.getTri(i).v0.print("Tri");
+    //     }
+    // }
+ 
     unsigned int seed = 12345 * x * y;
 
     Vec3 runningPixelColor = Vec3(0.0f, 0.0f, 0.0f);
@@ -17,7 +32,7 @@ __global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager
         Vec3 runningAlbedo = Vec3(1.0f, 1.0f, 1.0f);
 
         // get the ray from the camera but slightly nudged
-        Ray activeRay = Ray(x, y, deviceResourceManager, camera, seed);
+        Ray activeRay = Ray(x, y, camera, seed);
         
         size_t numBounces = 0;
 
@@ -25,7 +40,7 @@ __global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager
         
         for (size_t i = 0; i < camera.screenParams.maxBounces; i++) {
             // check if the ray hits any triangles
-            TriHit triHit = activeRay.getTriIntersection(deviceResourceManager);
+            TriHit triHit = activeRay.getTriIntersection(deviceTriBuffer);
 
             if (!triHit.hit) {
                 // we didnt hit anything which means we are done
@@ -35,7 +50,7 @@ __global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager
 
             // we have a hit!
             // get the tris material
-            DeviceMaterial& triMaterial = deviceResourceManager->deviceMaterialManager.getMaterial(triHit.tri.materialID);
+            DeviceMaterial& triMaterial = deviceMaterialManager.getMaterial(triHit.tri.materialID);
 
             if (triMaterial.lightSource) {
                 Vec3 triUV = triHit.tri.getUV(triHit.baryCoords);
@@ -46,13 +61,13 @@ __global__ void getPixelColorKernal(DeviceResourceManager* deviceResourceManager
 
             // reflect the ray and update runningAlbedo and runningEmission
             activeRay.bsdfReflect(triMaterial, triHit, seed, runningAlbedo);
-
+            
             numBounces++;
         }
 
         Vec3 finalColor = runningAlbedo * lightSource;
         runningPixelColor += finalColor;
     }
-
-    deviceResourceManager->deviceScreenBuffer.write(runningPixelColor / camera.screenParams.rayPerPixel, x, y);
+    
+    deviceScreenBuffer.write(runningPixelColor / camera.screenParams.rayPerPixel, x, y);
 }

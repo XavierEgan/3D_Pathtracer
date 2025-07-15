@@ -14,7 +14,12 @@
 #include "rand.cuh"
 #include "Transform3D.cuh"
 
-#include "../Misc/DeviceResourceManager/DeviceResourceManager.cuh"
+#include "../Misc/Camera.hpp"
+
+#include "../Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
+#include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
+#include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
+#include "../Misc/HostResourceManager/HostResourceManager.hpp"
 
 struct TriHit {
     Vec3 intersecPoint;
@@ -47,24 +52,38 @@ struct Ray {
 
     __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
     __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __device__ Ray(int planeX, int planeY, const DeviceResourceManager* scene, const Camera& camera, unsigned int& seed) {
+    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) {
         float u1 = randUniform(seed);
         float u2 = randUniform(seed);
 
         Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
-        Vec3 upComponent = camera.up * (((camera.screenParams.height/2) - planeY) + u1) * camera.screenParams.pxHeight;
-        Vec3 rightComponent = camera.right * (-((camera.screenParams.width/2) - planeX) + u2) * camera.screenParams.pxWidth;
+        Vec3 upComponent = camera.up * ((((float)camera.screenParams.height/2) - planeY) + u1) * camera.screenParams.pxHeight;
+        Vec3 rightComponent = camera.right * (-(((float)camera.screenParams.width/2) - planeX) + u2) * camera.screenParams.pxWidth;
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = camera.pos;
 
-        printf("x:%d, y:%d -- RayDir:(%f, %f, %f) -- Quadrant%d\n -- halfHeight:%d, halfWidth:%d", 
-            planeX, planeY, 
-            direction.x, direction.y, direction.z, 
-            planeY<camera.screenParams.height/2 ? (planeX < camera.screenParams.width/2 ? 2 : 1) : (planeX < camera.screenParams.width/2 ? 3 : 4),
-            (camera.screenParams.height/2),
-            (camera.screenParams.height/2)
-        );
+        // printf("x:%d, y:%d -- Quadrant %d\n\tRayDir:(%.2f, %.2f, %.2f) -- Rayforward:(%.2f, %.2f, %.2f) -- Rayup:(%.2f, %.2f, %.2f) -- Rayright:(%.2f, %.2f, %.2f)\n\tforward:(%.2f, %.2f, %.2f) -- up:(%.2f, %.2f, %.2f) -- right:(%.2f, %.2f, %.2f)\n\tu1:%f, u2:%f\n\tcalcX: %d, calcY: %d\n\tpxHeight:%f, pxWidth:%f\n", 
+        //     planeX, planeY,  
+        //     planeY<camera.screenParams.height/2 ? (planeX < camera.screenParams.width/2 ? 2 : 1) : (planeX < camera.screenParams.width/2 ? 3 : 4),
+        //     direction.x, direction.y, direction.z,
+
+        //     forwardComponent.x, forwardComponent.y, forwardComponent.z, 
+        //     upComponent.x, upComponent.y, upComponent.z, 
+        //     rightComponent.x, rightComponent.y, rightComponent.z,
+
+        //     camera.forward.x, camera.forward.y, camera.forward.z,
+        //     camera.up.x, camera.up.y, camera.up.z,
+        //     camera.right.x, camera.right.y, camera.right.z,
+            
+        //     u1, u2,
+
+        //     ((camera.screenParams.height/2) - planeY),
+        //     -((camera.screenParams.width/2) - planeX),
+
+        //     camera.screenParams.pxHeight,
+        //     camera.screenParams.pxWidth
+        // );
     }
 
     __device__ TriHit rayTriIntercept(const Tri& tri) const {
@@ -102,13 +121,14 @@ struct Ray {
         }
     }
 
-    __device__ TriHit getTriIntersection(const DeviceResourceManager* deviceResourceManager) const {
+    __device__ TriHit getTriIntersection(DeviceTriBuffer& deviceTriBuffer) const {
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;
 
-        for (int i = 0; i < deviceResourceManager->deviceTriBuffer.numTris; i++) {
-            const Tri& tri = deviceResourceManager->deviceTriBuffer.tris[i];
+        for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
+
+            const Tri& tri = deviceTriBuffer.getTri(i);
 
             TriHit triHit = this->rayTriIntercept(tri);
 

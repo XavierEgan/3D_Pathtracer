@@ -22,6 +22,15 @@ public:
     }
 
     __device__ void write(Vec3 data, unsigned int x, unsigned int y) {
+        if (x >= width) {
+            printf("Out of range write (width)\n");
+            return;
+        }
+        if (y >= height) {
+            printf("Out of range write (height)\n");
+            return;
+        }
+
         this->data[y * width * 3 + x * 3] = (char)(data.x * 255);
         this->data[y * width * 3 + x * 3 + 1] = (char)(data.y * 255);
         this->data[y * width * 3 + x * 3 + 2] = (char)(data.z * 255);

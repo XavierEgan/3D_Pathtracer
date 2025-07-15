@@ -3,7 +3,7 @@
 #include <limits.h>
 
 // this should be thread safe IFF each thread has a local seed
-__host__ __device__ int randInt(unsigned int& seed) {
+__host__ __device__ unsigned int randInt(unsigned int& seed) {
     seed = seed * 1664525 + 1013904223;
     return seed;
 }

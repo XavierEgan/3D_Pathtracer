@@ -22,7 +22,6 @@ struct Material {
     __host__ void mapsToDevice() {
         textureMap.toDevice();
         normalMap.toDevice();
-        printf("foo");
     }
 
     __device__ Vec3 getAlbedo(float u, float v) const {

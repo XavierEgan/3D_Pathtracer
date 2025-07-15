@@ -7,8 +7,7 @@ class HostMeshManager {
     std::vector<HostMesh> meshs;
 
 public:  
-    HostMeshManager() : meshs(std::vector<HostMesh>()) {}
-    HostMeshManager(std::vector<HostMesh> meshs) : meshs(meshs) {}
+    HostMeshManager() = default;
 
     void registerMesh(const HostMesh& hostMesh) {
         meshs.push_back(hostMesh);

@@ -9,7 +9,7 @@ class HostMaterialManager {
     std::vector<HostMaterial> materials;
 
 public:
-    HostMaterialManager() : materials(std::vector<HostMaterial>()) {}
+    HostMaterialManager() = default;
 
     std::vector<HostMaterial> getMaterials() const {
         return materials;

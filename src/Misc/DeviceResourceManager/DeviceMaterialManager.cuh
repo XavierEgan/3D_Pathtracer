@@ -19,8 +19,10 @@ public:
 
         std::vector<DeviceMaterial> deviceMaterials;
 
+        int i=0;
         for (HostMaterial hm : hostMaterials) {
             deviceMaterials.emplace_back(hm);
+            i++;
         }
 
         size_t size = deviceMaterials.size() * sizeof(DeviceMaterial);

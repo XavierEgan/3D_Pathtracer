@@ -28,8 +28,8 @@ struct ScreenParams {
 
         pxWidth = (horizontalHalfScale * 2.0f) / width;
 
-        printf("verticalHalfScale: %f\n", verticalHalfScale);
-        printf("horizontalHalfScale: %f\n", horizontalHalfScale);
+        // printf("verticalHalfScale: %f\n", verticalHalfScale);
+        // printf("horizontalHalfScale: %f\n", horizontalHalfScale);
     }
 };
 
@@ -48,10 +48,10 @@ struct Camera {
         // up is the cross between right a forward in that order
         up = (right.cross(forward.normalized())).normalized();
 
-        forward.print("Camera forward");
-        right.print("Camera right");
-        up.print("Camera up");
-        pos.print("Camera Pos");
+        // forward.print("Camera forward");
+        // right.print("Camera right");
+        // up.print("Camera up");
+        // pos.print("Camera Pos");
         
     }
 };
