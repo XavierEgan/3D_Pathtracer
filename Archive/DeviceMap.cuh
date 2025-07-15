@@ -19,8 +19,6 @@ public:
 
         std::vector<unsigned char> hostData = hostMap.getData();
 
-        //printf("%d, %d, %d\n", hostData[0], hostData[1], hostData[2]); // gives 255,0,0
-
         size_t size = mapWidth * mapHeight * channels * sizeof(unsigned char);
         cudaError_t err = cudaMalloc(&mapData, size);
         if (err != cudaSuccess) {
@@ -28,8 +26,6 @@ public:
         }
 
         unsigned char* hostDataPointer = hostData.data();
-
-        //printf("First pixel in host data: %d, %d, %d\n", hostDataPointer[0], hostDataPointer[1], hostDataPointer[2]);
 
         err = cudaMemcpy(mapData, hostDataPointer, size, cudaMemcpyHostToDevice);
         if (err != cudaSuccess) {

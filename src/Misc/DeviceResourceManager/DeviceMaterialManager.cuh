@@ -17,12 +17,12 @@ public:
         const std::vector<HostMaterial> hostMaterials = hostMaterialManager.getMaterials();
         numMaterials = hostMaterials.size();
 
+        hostMaterialManager.print();
+
         std::vector<DeviceMaterial> deviceMaterials;
 
-        int i=0;
-        for (HostMaterial hm : hostMaterials) {
+        for (const HostMaterial& hm : hostMaterials) {
             deviceMaterials.emplace_back(hm);
-            i++;
         }
 
         size_t size = deviceMaterials.size() * sizeof(DeviceMaterial);
@@ -45,6 +45,15 @@ public:
     __host__ DeviceMaterialManager& operator=(DeviceMaterialManager&& deviceMaterialManager) = delete;
 
     __device__ DeviceMaterial& getMaterial(MaterialID materialID) const {
+        if (materialID.materialID >= numMaterials) {
+            printf("[KERNEL] Error, materialID out of range");
+        }
         return materials[materialID.materialID];
+    }
+
+    __device__ void print() {
+        for (int i=0; i < numMaterials; i++) {
+            getMaterial(MaterialID(i)).print();
+        }
     }
 };

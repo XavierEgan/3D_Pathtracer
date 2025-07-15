@@ -83,18 +83,19 @@ int main(void) {
     trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
     brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    const unsigned int width = 4096;
-    const unsigned int height = 4096;
+    const unsigned int width = 2048;//4096
+    const unsigned int height = 2048;
     const float verticalFov = 90 * (3.1415f/180);
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 512;
-    const unsigned int maxBounces = 8;
+    const unsigned int rayPerPixel = 128 * 32;
+    const unsigned int maxBounces = 128 * 32;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
 
-    Vec3 camOrigin = Vec3(-2.5,0,.75);
+    Vec3 camOrigin = Vec3(-2.,0,.75);
     Vec3 camForward = Vec3(1,0,-.5);
+
     Camera camera = Camera(
         camOrigin,
         camForward,
@@ -104,42 +105,44 @@ int main(void) {
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 0.0f, false, HostMap(Vec3(0.8f, 0.8f, 0.8f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
     HostMaterial rightWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(0.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID rightWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(rightWallMaterial);
 
     HostMaterial roofMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID roofMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(roofMaterial);
 
     HostMaterial floorMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
+    
+
     // printf("leftWallMaterialID: %d\n", leftWallMaterialID.materialID);
 
-    HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, rightWallMaterialID);
+    HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
 
-    HostMesh backWallMesh = HostMesh::plane(trb, tlb, blb, brb, backWallMaterialID);
+    HostMesh backWallMesh = HostMesh::plane(brb, blb, tlb, trb, backWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
 
     HostMesh rightWallMesh = HostMesh::plane(trb, trf, brf, brb, rightWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(rightWallMesh);
 
-    HostMesh roofMesh = HostMesh::plane(trb, tlb, tlf, trf, roofMaterialID);
+    HostMesh roofMesh = HostMesh::plane(trf, tlf, tlb, trb, roofMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(roofMesh);
 
     HostMesh floorMesh = HostMesh::plane(brb, blb, blf, brf, floorMaterialID);

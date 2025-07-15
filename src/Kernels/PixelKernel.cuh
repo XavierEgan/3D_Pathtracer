@@ -19,11 +19,9 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         return;
     }
 
-    // if (x == 0 && y == 0) {
-    //     for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
-    //         deviceTriBuffer.getTri(i).v0.print("Tri");
-    //     }
-    // }
+    if (x == 0 && y == 0) {
+        deviceMaterialManager.print();
+    }
  
     unsigned int seed = 12345 * x * y;
 
@@ -69,5 +67,8 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         runningPixelColor += finalColor;
     }
     
-    deviceScreenBuffer.write(runningPixelColor / camera.screenParams.rayPerPixel, x, y);
+    Vec3 color = (runningPixelColor / camera.screenParams.rayPerPixel);
+    //Vec3 finalColor = Vec3(powf(color.x, 1/2.2), powf(color.y, 1/2.2), powf(color.z, 1/2.2));
+
+    deviceScreenBuffer.write(color, x, y);
 }

@@ -12,7 +12,7 @@ public:
 
     static HostMesh plane(Vec3 c1, Vec3 c2, Vec3 c3, Vec3 c4, MaterialID materialID) {
         /*
-        points should be clockwise or anticlockwise
+        points should be ccw
         */
         std::vector<Tri> planeTris = {
             Tri(c1, c2, c3, materialID), 
@@ -28,5 +28,9 @@ public:
 
     Tri* getTrisPointer() {
         return tris.data();
+    }
+
+    void addTri(Vec3 v0, Vec3 v1, Vec3 v2, MaterialID matID) {
+        tris.emplace_back(v0, v1, v2, matID);
     }
 };

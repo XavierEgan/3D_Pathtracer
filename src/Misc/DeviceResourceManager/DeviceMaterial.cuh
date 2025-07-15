@@ -2,7 +2,6 @@
 
 #include <vector>
 #include "../Math/Tri.cuh"
-#include "DeviceMap.cuh"
 #include "../HostResourceManager/HostMaterial.hpp"
 
 /*
@@ -16,8 +15,15 @@ public:
 
     bool lightSource;
 
-    DeviceMap textureMap;
-    DeviceMap normalMap;
+    unsigned char* textureMapData;
+    unsigned int textureMapWidth;
+    unsigned int textureMapHeight;
+    unsigned int textureMapChannels;
+    
+    unsigned char* normalMapData;
+    unsigned int normalMapWidth;
+    unsigned int normalMapHeight;
+    unsigned int normalMapChannels;
 
     __host__ DeviceMaterial() = delete;
     __host__ DeviceMaterial(const HostMaterial& hostMaterial): 
@@ -25,15 +31,81 @@ public:
         IOR(hostMaterial.getIOR()),
         roughness(hostMaterial.getRoughness()),
         lightSource(hostMaterial.getLightSource()),
-        textureMap(DeviceMap(hostMaterial.getTextureMap())),
-        normalMap(DeviceMap(hostMaterial.getNormalMap()))
-    {}
+        textureMapData(nullptr),
+        textureMapWidth(hostMaterial.getTextureMap().getWidth()),
+        textureMapHeight(hostMaterial.getTextureMap().getHeight()),
+        textureMapChannels(hostMaterial.getTextureMap().getChannels()),
+        normalMapData(nullptr),
+        normalMapWidth(hostMaterial.getNormalMap().getWidth()),
+        normalMapHeight(hostMaterial.getNormalMap().getHeight()),
+        normalMapChannels(hostMaterial.getNormalMap().getChannels())
+    {
+        size_t textureMapSize = sizeof(unsigned char) * textureMapWidth * textureMapHeight * textureMapChannels;
+        size_t normalMapSize = sizeof(unsigned char) * normalMapWidth * normalMapHeight * normalMapChannels;
+
+        cudaMalloc(&textureMapData, textureMapSize);
+        cudaMalloc(&normalMapData, normalMapSize);
+
+        auto hostTextureMapData = hostMaterial.getTextureMap().getData();
+        auto hostNormalMapData = hostMaterial.getNormalMap().getData();
+
+        unsigned char* hostTextureMapDataPointer = hostTextureMapData.data();
+        unsigned char* hostNormalMapDataPointer = hostNormalMapData.data();
+
+        cudaMemcpy(textureMapData, hostTextureMapDataPointer, textureMapSize, cudaMemcpyHostToDevice);
+        cudaMemcpy(normalMapData, hostNormalMapDataPointer, normalMapSize, cudaMemcpyHostToDevice);
+    }
 
     __device__ Vec3 getAlbedo(float u, float v) const {
-        return textureMap.sample(u, v);
+        int x = static_cast<int>(u * textureMapWidth);
+        int y = static_cast<int>(v * textureMapHeight);
+        int index = (y * textureMapWidth + x) * textureMapChannels;
+
+        if (x >= textureMapWidth || y >= textureMapHeight) {
+            printf("[DEVICE] getAlbedo out of range access\n");
+            return Vec3();
+        }
+
+        Vec3 ret = Vec3(
+            textureMapData[index] / 255.0f,
+            textureMapData[index + 1] / 255.0f,
+            textureMapData[index + 2] / 255.0f
+        );
+
+        return ret;
     }
 
     __device__ Vec3 getNormalOffset(float u, float v) const {
-        return normalMap.sample(u, v);
+        if (normalMapWidth == 0 || normalMapHeight == 0) {
+            // no normal map
+            return Vec3();
+        }
+
+        int x = static_cast<int>(u * normalMapWidth);
+        int y = static_cast<int>(v * normalMapHeight);
+        int index = (y * normalMapWidth + x) * normalMapChannels;
+
+        if (x >= normalMapWidth || y >= normalMapHeight) {
+            printf("[DEVICE] getNormalOffset out of range access\n");
+            return Vec3();
+        }
+
+        Vec3 ret = Vec3(
+            normalMapData[index] / 255.0f,
+            normalMapData[index + 1] / 255.0f,
+            normalMapData[index + 2] / 255.0f
+        );
+        
+        return ret;
+    }
+
+    __device__ void print() {
+        /*
+        printf("[DEVICE] transmission: %.1f, IOR: %.1f, roughness: %.1f, lightSource: %d, textureMap[0]: %.2f, textureMap[1]: %.2f, textureMap[2]: %.2f\n",
+        transmission, IOR, roughness, lightSource, 
+        textureMap.sample(0,0).x, textureMap.sample(0,0).y, textureMap.sample(0,0).z);
+        */
+        printf("[DEVICE] textureMap[0]: %.2f, textureMap[1]: %.2f, textureMap[2]: %.2f\n",
+        getAlbedo(0,0).x, getAlbedo(0,0).y, getAlbedo(0,0).z);
     }
 };

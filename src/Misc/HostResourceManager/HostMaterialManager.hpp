@@ -19,4 +19,10 @@ public:
         materials.push_back(material);
         return MaterialID(materials.size() - 1);
     }
+
+    void print() const {
+        for (HostMaterial hm : materials) {
+            hm.print();
+        }
+    }
 };

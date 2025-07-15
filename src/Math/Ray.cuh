@@ -35,13 +35,13 @@ struct TriHit {
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
     Vec3 tangent = edge1.normalized();
-    Vec3 bitangent = normal.cross(edge1).normalized();
+    Vec3 bitangent = normal.cross(tangent).normalized();
 
     Transform3D transform = Transform3D(
         tangent,
         bitangent,
         normal
-    ).inverse();
+    );
 
     return (Vec3(0,0,1) + offset) * transform;
 }
@@ -160,6 +160,11 @@ struct Ray {
             l_ = basis vectors are in local/tangent space
             g_ = basis vectors are in global space
         */
+        float u1 = randUniform(localSeed);
+        float u2 = randUniform(localSeed);
+        bool reflect = u1 < material.transmission;
+        bool diffuse = u2 < material.roughness;
+
         // for naming convention
         Vec3& g_direction = direction;
         Vec3& g_origin = origin;
@@ -180,6 +185,11 @@ struct Ray {
         Vec3 normalOffset = material.getNormalOffset(triUV.x,triUV.y);
         Vec3 g_normal = getNormalFromOffset(g_triNormal, g_edge1, normalOffset);
 
+        bool facingFront = g_direction.dot(g_triNormal) < 0;
+        if (!facingFront && !reflect) {
+            g_normal *= -1;
+        }
+
         // create an orthonormal basis from our new normal
         Vec3 arbitrary = g_normal.x < .9 ? Vec3(1,0,0) : Vec3(0,1,0);
         Vec3 g_tangent = g_normal.cross(arbitrary).normalized();
@@ -197,10 +207,7 @@ struct Ray {
         // get the ray in local space
         Vec3 l_rayDirection = (g_direction * globalToLocal).normalized();
 
-        float u1 = randUniform(localSeed);
-        float u2 = randUniform(localSeed);
-
-        if (u1 < material.transmission) {
+        if (reflect) {
             // we need to refract
             /*
             source:
@@ -209,7 +216,7 @@ struct Ray {
             */
             float ni, nr;
             Vec3 refractionNormal;
-            if (g_direction.dot(g_normal) < 0) {
+            if (facingFront) {
                 // we are hittign the front of the tri (going in, normal faces toward us)
                 ni = 1.0f;
                 nr = material.IOR;
@@ -245,7 +252,7 @@ struct Ray {
             }
         } else {
             // we need to reflect
-            if (u2 < material.roughness) {
+            if (diffuse) {
                 // diffuse reflect
                 // cosine weighted sampling
                 // get some fresh rand numbs

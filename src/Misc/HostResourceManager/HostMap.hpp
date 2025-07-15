@@ -17,9 +17,6 @@ public:
         mapData.push_back(static_cast<unsigned char>(color.x * 255));
         mapData.push_back(static_cast<unsigned char>(color.y * 255));
         mapData.push_back(static_cast<unsigned char>(color.z * 255));
-
-        
-        
     }
     
     unsigned int getWidth() const {
