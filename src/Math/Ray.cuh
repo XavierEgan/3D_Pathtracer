@@ -35,16 +35,12 @@ struct TriHit {
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
-    Vec3 tangent = edge1.normalized();
+    Vec3 tangent = edge1;
     Vec3 bitangent = normal.cross(tangent).normalized();
 
-    Transform3D transform = Transform3D(
-        tangent,
-        bitangent,
-        normal
-    );
+    Vec3 localVecWithOffset = Vec3(0,0,1) + offset;
 
-    return (Vec3(0,0,1) + offset) * transform;
+    return localVecWithOffset.x * tangent + localVecWithOffset.y * bitangent + localVecWithOffset.z * normal;
 }
 
 struct Ray {
@@ -164,134 +160,93 @@ struct Ray {
         }
     }
 
-    __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
+    __device__ void refractReflect(Vec3& shiftedTriNormal, unsigned int& localSeed, const TriHit& triHit, const DeviceMaterial& material) {
+        // we need to refract
         /*
-            i = tangent
-            j = bitangent
-            k = normal
-
-            local space = tangent space
-            l_ = basis vectors are in local/tangent space
-            g_ = basis vectors are in global space
+        source:
+            - https://shaderbits.com/blog/optimized-snell-s-law-refraction
+            - https://www.cse.chalmers.se/edu/year/2013/course/TDA361/refractionvector.pdf
         */
+        float ni, nr;
+        Vec3 refractionNormal;
+        bool facingFront = direction.dot(shiftedTriNormal) < 0;
+
+        ni = 1.0f * facingFront + material.IOR * !facingFront;
+        nr = 1.0f * !facingFront + material.IOR * facingFront;
+
+        shiftedTriNormal *= 1 - (2 * !facingFront);
+
+        // remembering that a.b = |a||b|*cos(theta)
+        float cosThetaI = -refractionNormal.dot(direction); // |normal| = 1 and |incident| = 1
+
+        float n = ni/nr;
+        float discriminant = 1 - n * n * (1 - cosThetaI * cosThetaI);
+
+        if (discriminant < 1e-4f) {
+            // TIR
+            direction= (direction - 2 * refractionNormal.dot(direction) * refractionNormal).normalized();
+            
+        } else {
+            // refraction
+            direction = (n * direction + ((n * cosThetaI) - sqrtf(discriminant)) * refractionNormal).normalized();
+        }
+    }
+
+    __device__ void diffuseReflect(Vec3& shiftedTriNormal, unsigned int& localSeed, const TriHit& triHit) {
         float u1 = randUniform(localSeed);
         float u2 = randUniform(localSeed);
+
+        float r = sqrtf(u1);
+        float phi = 2.0f * 3.1415926 * u2;
+
+        Vec3 localRay = Vec3(
+            r * cosf(phi),
+            r * sinf(phi),
+            sqrt(1.0f - u1)
+        );
+
+        // create an orthonormal basis
+        Vec3 arbitrary = shiftedTriNormal + Vec3(.1, .1, .1);
+        Vec3 tangent = shiftedTriNormal.cross(arbitrary).normalized();
+        Vec3 bitangent = shiftedTriNormal.cross(tangent).normalized();
+
+        direction = localRay.x * tangent + localRay.y * bitangent + localRay.z * shiftedTriNormal;
+    }
+
+    __device__ void mirrorReflect(Vec3& shiftedTriNormal) {
+        direction = (direction - 2*(direction.dot(shiftedTriNormal))*shiftedTriNormal).normalized();
+    }
+
+    __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
+        float u1 = randUniform(localSeed);
+        float u2 = randUniform(localSeed);
+
         bool refract = u1 < material.transmission;
         bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
 
-        // for naming convention
-        Vec3& g_direction = direction;
-        Vec3& g_origin = origin;
+        int type = !refract * (diffuse + 1); // get the type in a branchless way
 
-        // get uv coords of intersection
-        Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
+        Vec3 UV = triHit.tri->getUV(triHit.baryCoords);
 
-        // prod the albedo
-        Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
-        runningAlbedo *= triAlbedo;
-
-        // get tri normal
-        Vec3 g_edge1 = triHit.tri->v1 - triHit.tri->v0;
-        Vec3 g_edge2 = triHit.tri->v2 - triHit.tri->v0;
-        Vec3 g_triNormal = (g_edge1).cross(g_edge2).normalized();
-
-        // offset the normal
-        Vec3 normalOffset = material.getNormalOffset(triUV.x,triUV.y);
-        Vec3 g_normal = getNormalFromOffset(g_triNormal, g_edge1, normalOffset);
-
-        bool facingFront = g_direction.dot(g_triNormal) < 0;
-        if (!facingFront && !refract) {
-            g_normal *= -1;
-        }
-
-        // create an orthonormal basis from our new normal
-        Vec3 arbitrary = g_normal.x < .9 ? Vec3(1,0,0) : Vec3(0,1,0);
-        Vec3 g_tangent = g_normal.cross(arbitrary).normalized();
-        Vec3 g_bitangent = g_normal.cross(g_tangent).normalized();
+        Vec3 edge1 = (triHit.tri->v1 - triHit.tri->v0).normalized();
+        Vec3 normalOffset = material.getNormalOffset(UV.x, UV.y);
+        Vec3 shiftedTriNormal = getNormalFromOffset(triHit.tri->normal, edge1, normalOffset);
         
-        // make transform to take local vects into global space
-        Transform3D localToGlobal = Transform3D(
-            g_tangent,
-            g_bitangent,
-            g_normal
-        );
+        runningAlbedo *= material.getAlbedo(UV.x, UV.y);
 
-        Transform3D globalToLocal = localToGlobal.inverse();
-
-        // get the ray in local space
-        Vec3 l_rayDirection = (g_direction * globalToLocal).normalized();
-
-        if (refract) {
-            // we need to refract
-            /*
-            source:
-             - https://shaderbits.com/blog/optimized-snell-s-law-refraction
-             - https://www.cse.chalmers.se/edu/year/2013/course/TDA361/refractionvector.pdf
-            */
-            float ni, nr;
-            Vec3 refractionNormal;
-            if (facingFront) {
-                // we are hittign the front of the tri (going in, normal faces toward us)
-                ni = 1.0f;
-                nr = material.IOR;
-
-                refractionNormal = g_normal;
-            } else {
-                // we are hitting the back of the tri (going out, normal faces away)
-                ni = material.IOR;
-                nr = 1.0f;
-
-                refractionNormal = -g_normal;
-            }
-
-            // remembering that a.b = |a||b|*cos(theta)
-            float cosThetaI = -refractionNormal.dot(g_direction); // |normal| = 1 and |incident| = 1
-
-            float n = ni/nr;
-            float discriminant = 1 - n * n * (1 - cosThetaI * cosThetaI);
-
-            if (discriminant < 1e-4f) {
-                // TIR
-                g_direction = (g_direction - 2 * refractionNormal.dot(g_direction) * refractionNormal).normalized();
-
-                // set the origin of our new ray
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
-                
-            } else {
-                // refraction
-                g_direction = (n * g_direction + ((n * cosThetaI) - sqrtf(discriminant)) * refractionNormal).normalized();
-
-                // set the origin of our new ray
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
-            }
-        } else {
-            // we need to reflect
-            if (diffuse) {
-                // diffuse reflect
-                // cosine weighted sampling
-                // get some fresh rand numbs
-                u1 = randUniform(localSeed);
-                u2 = randUniform(localSeed);
-
-                float r = sqrtf(u1);
-                float phi = 2.0f * 3.1415926 * u2;
-
-                Vec3 localRay = Vec3(
-                    r * cosf(phi),
-                    r * sinf(phi),
-                    sqrt(1.0f - u1)
-                );
-
-                g_direction = (localRay * localToGlobal).normalized();
-
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
-            } else {
-                // mirror reflect
-                // R = I - 2(ProjN(I))
-                g_direction = (g_direction - 2*(g_direction.dot(g_normal))*g_normal).normalized();
-
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
-            }
+        switch (type) {
+            case 0:
+                refractReflect( shiftedTriNormal, localSeed, triHit, material );
+                break;
+            case 1:
+                mirrorReflect( shiftedTriNormal );
+                break;
+            case 2:
+                diffuseReflect( shiftedTriNormal, localSeed, triHit );
+                break;
         }
+
+        // set origin after direction so we can epsilon shift to avoid intersecting the same triangle again
+        origin = (triHit.intersecPoint).epsilonShift(direction);
     }
 };

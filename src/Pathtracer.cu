@@ -158,7 +158,7 @@ int main(void) {
     HostMesh backWallMesh = HostMesh::plane(brb, blb, tlb, trb, backWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
 
-    HostMesh rightWallMesh = HostMesh::plane(trb, trf, brf, brb, rightWallMaterialID);
+    HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(rightWallMesh);
 
     HostMesh roofMesh = HostMesh::plane(trf, tlf, tlb, trb, roofMaterialID);

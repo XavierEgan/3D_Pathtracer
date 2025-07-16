@@ -238,3 +238,5 @@ __device__ const Tri& getTri(unsigned int i) const {
 Final time after optimisation: `24.3s`\
 Thats a `27.3/24.3 =` **1.12x speedup**
 
+### Rewrite `bsdfReflect` to use branchless programming
+`bsdfReflect` was in desperate need of a rewrite anyway
