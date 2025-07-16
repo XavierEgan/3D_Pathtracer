@@ -20,6 +20,7 @@
 #include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
 #include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
+#include "../Misc/PixelOptimisationReport.cuh"
 
 struct TriHit {
     Vec3 intersecPoint;
@@ -130,7 +131,11 @@ struct Ray {
         }
     }
 
-    __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer) const {
+    __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer, const PixelOptimisationReport& pixelOptimisationReport, bool cameraRay) const {
+        if (cameraRay && pixelOptimisationReport.isCoherentPixel) {
+            return rayTriIntercept(pixelOptimisationReport.coherentTri);
+        }
+
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;

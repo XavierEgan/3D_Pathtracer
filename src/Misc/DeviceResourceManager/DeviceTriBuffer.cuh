@@ -43,9 +43,11 @@ public:
     __host__ DeviceTriBuffer& operator=(DeviceTriBuffer&& deviceTriBuffer) = delete;
 
     __device__ const Tri& getTri(unsigned int i) const {
+        #ifdef DEBUG
         if (i >= numTris) {
             printf("[DEVICE ERROR] in getTri, index out of range");
         }
+        #endif
         return tris[i];
     }
     __device__ size_t getNumTris() const {

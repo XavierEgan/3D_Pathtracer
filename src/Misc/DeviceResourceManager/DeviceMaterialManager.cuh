@@ -45,9 +45,11 @@ public:
     __host__ DeviceMaterialManager& operator=(DeviceMaterialManager&& deviceMaterialManager) = delete;
 
     __device__ DeviceMaterial& getMaterial(MaterialID materialID) const {
+        #ifdef DEBUG
         if (materialID.materialID >= numMaterials) {
             printf("[KERNEL] Error, materialID out of range");
         }
+        #endif
         return materials[materialID.materialID];
     }
 

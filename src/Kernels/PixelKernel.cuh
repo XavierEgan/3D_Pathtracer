@@ -4,22 +4,7 @@
 #include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
 #include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
-
-struct PixelOptimisationReport {
-    bool isBlankPixel;
-    bool isCoherentPixel;
-    const Tri& coherentTri;
-
-    __device__ PixelOptimisationReport(
-        bool isBlankPixel, 
-        bool isCoherentPixel, 
-        const Tri& coherentTri
-    ) : 
-        isBlankPixel(isBlankPixel),
-        isCoherentPixel(isCoherentPixel),
-        coherentTri(coherentTri)
-    {}
-};
+#include "../Misc/PixelOptimisationReport.cuh"
 
 __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
     float subPixelOffsetX, subPixelOffsetY;
@@ -31,13 +16,15 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
 
     bool coherentTri = true;
 
+    PixelOptimisationReport dummyReport = PixelOptimisationReport(false, false, Tri());
+
     for (int x=0; x < 3; x++) {
         for (int y=0; y < 3; y++) {
             subPixelOffsetX = x * .5;
             subPixelOffsetY = y * .5;
             Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
 
-            triHit = ray.getTriIntersection(deviceTriBuffer);
+            triHit = ray.getTriIntersection(deviceTriBuffer, dummyReport, false);
 
             if (x==0 && y==0) {
                 if (triHit.hit) {
@@ -98,7 +85,8 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         
         for (size_t i = 0; i < camera.screenParams.maxBounces; i++) {
             // check if the ray hits any triangles
-            TriHit triHit = activeRay.getTriIntersection(deviceTriBuffer);
+            bool cameraRay = i == 0;
+            TriHit triHit = activeRay.getTriIntersection(deviceTriBuffer, pixelOptimisationReport, cameraRay);
 
             if (!triHit.hit) {
                 // we didnt hit anything which means we are done

@@ -144,10 +144,10 @@ struct TriHit {
 
 The reason this has such a dramatic performance boost is that TriHit is in the hottest loop in the entire program. It's returned for each ray-tri intersection check, which is the heart of the 3d pathtracer
 
-Final time after optimisation: `29.0s`\
-Thats a `42.8/29.0 =` **1.48x speedup**
+Final time after optimisation: `28.9s`\
+Thats a `42.8/28.9 =` **1.48x speedup**
 
-### Ray Coherence
+### Pixel Triangle Coherence Checking (1.06x speedup)
 Similar to Early Pixel Termination, we can cast 9 strategic rays and check if they all hit the same triangle. If they all do then we can skip the first ray-tri intersection check, and only intersect with the one triangle.
 
 We can modify the Early Pixel Termination code to also check for this by returning a POD struct `pixelOptimisationReport`
@@ -159,24 +159,7 @@ struct pixelOptimisationReport {
     Tri& coherentTri;
 }
 ```
-
 ```C++
-struct PixelOptimisationReport {
-    bool isBlankPixel;
-    bool isCoherentPixel;
-    const Tri& coherentTri;
-
-    __device__ PixelOptimisationReport(
-        bool isBlankPixel, 
-        bool isCoherentPixel, 
-        const Tri& coherentTri
-    ) : 
-        isBlankPixel(isBlankPixel),
-        isCoherentPixel(isCoherentPixel),
-        coherentTri(coherentTri)
-    {}
-};
-
 __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
     float subPixelOffsetX, subPixelOffsetY;
     int missedRayCount = 0;
@@ -187,13 +170,15 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
 
     bool coherentTri = true;
 
+    PixelOptimisationReport dummyReport = PixelOptimisationReport(false, false, Tri());
+
     for (int x=0; x < 3; x++) {
         for (int y=0; y < 3; y++) {
             subPixelOffsetX = x * .5;
             subPixelOffsetY = y * .5;
             Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
 
-            triHit = ray.getTriIntersection(deviceTriBuffer);
+            triHit = ray.getTriIntersection(deviceTriBuffer, dummyReport, false);
 
             if (x==0 && y==0) {
                 if (triHit.hit) {
@@ -218,3 +203,41 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
     );
 }
 ```
+The code now compares each intersected triangle with a reference triangle (reference triangle is the first triangle hit). If all triangles are equal to the reference triangle, then we know the pixel is coherent and we can assume we hit this triangle first for all camera ray casts.
+
+We can now also modify the ray-tri intersection code to skip if we are a coherent tri and we are not a bouncing ray
+
+```C++
+    __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer, const PixelOptimisationReport& pixelOptimisationReport, bool cameraRay) const {
+        if (cameraRay && pixelOptimisationReport.isCoherentPixel) {
+            return rayTriIntercept(pixelOptimisationReport.coherentTri);
+        }
+
+        // Skip entire triangle intersection checking loop
+    }
+```
+
+Final time after optimisation: `27.3s`\
+Thats a `28.9/27.3 =` **1.12x speedup**
+
+### Remove Error Checking In Release Build
+Since we can be reasonably confident that out of bound memory accesses wont take place in build, we can use a preprocessor conditional to not run the checks.
+
+This is especially usefull in the `getTri` method, as this is run for every ray-tri intercept check
+```C++
+__device__ const Tri& getTri(unsigned int i) const {
+    #ifdef DEBUG
+    if (i >= numTris) {
+        printf("[DEVICE ERROR] in getTri, index out of range");
+    }
+    #endif
+    return tris[i];
+}
+```
+
+Final time after optimisation: `27.3s`\
+Thats a `27.3/24.3 =` **1.12x speedup**
+
+### Prefer SoA over AoS
+SoA stands for Structure of Arrays, AoS stands for Array of Structures
+

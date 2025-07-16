@@ -61,10 +61,12 @@ public:
         int y = static_cast<int>(v * textureMapHeight);
         int index = (y * textureMapWidth + x) * textureMapChannels;
 
+        #ifdef DEBUG
         if (x >= textureMapWidth || y >= textureMapHeight) {
             printf("[DEVICE] getAlbedo out of range access\n");
             return Vec3();
         }
+        #endif
 
         Vec3 ret = Vec3(
             textureMapData[index] / 255.0f,
@@ -85,10 +87,12 @@ public:
         int y = static_cast<int>(v * normalMapHeight);
         int index = (y * normalMapWidth + x) * normalMapChannels;
 
+        #ifdef DEBUG
         if (x >= normalMapWidth || y >= normalMapHeight) {
             printf("[DEVICE] getNormalOffset out of range access\n");
             return Vec3();
         }
+        #endif
 
         Vec3 ret = Vec3(
             normalMapData[index] / 255.0f,
