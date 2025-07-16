@@ -255,7 +255,7 @@ Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
 
 ## Limitations
-- **No Energy Conservation or Proper Global Illumination:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This misses indirect lighting (e.g., light scattering off walls to illuminate shadows) and doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
+- **No Energy Conservation or Proper Global Illumination:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
 - **Simplified BSDF and Sampling:** Reflections are handled with a basic mix of diffuse and specular based on roughness, without advanced features like Fresnel effects, microfacet models, or importance sampling. Paths use a fixed number of bounces without Russian Roulette, which introduces bias and inefficiency.
 
 These choices were made to keep the code manageable as a first-year student project, allowing me to focus on core implementation rather than perfect theory.
