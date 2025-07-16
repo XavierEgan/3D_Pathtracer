@@ -162,7 +162,7 @@ struct Ray {
         */
         float u1 = randUniform(localSeed);
         float u2 = randUniform(localSeed);
-        bool reflect = u1 < material.transmission;
+        bool refract = u1 < material.transmission;
         bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
 
         // for naming convention
@@ -186,7 +186,7 @@ struct Ray {
         Vec3 g_normal = getNormalFromOffset(g_triNormal, g_edge1, normalOffset);
 
         bool facingFront = g_direction.dot(g_triNormal) < 0;
-        if (!facingFront && !reflect) {
+        if (!facingFront && !refract) {
             g_normal *= -1;
         }
 
@@ -207,7 +207,7 @@ struct Ray {
         // get the ray in local space
         Vec3 l_rayDirection = (g_direction * globalToLocal).normalized();
 
-        if (reflect) {
+        if (refract) {
             // we need to refract
             /*
             source:

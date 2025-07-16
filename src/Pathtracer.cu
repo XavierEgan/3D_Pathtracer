@@ -145,7 +145,10 @@ int main(void) {
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
-    
+    HostMaterial randMaterial = HostMaterial(
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+    );
+    MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
 
     // printf("leftWallMaterialID: %d\n", leftWallMaterialID.materialID);
 
@@ -163,6 +166,11 @@ int main(void) {
 
     HostMesh floorMesh = HostMesh::plane(brb, blb, blf, brf, floorMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(floorMesh);
+
+    unsigned int seed = 0;
+
+    HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
     auto v = hostResourceManager.hostMeshManager.getMeshs()[0].getTris()[0].v0;
 

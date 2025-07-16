@@ -22,6 +22,21 @@ public:
         return HostMesh(planeTris);
     }
 
+    static HostMesh randomMesh(float min, float max, size_t numTris, unsigned int& seed,  MaterialID materialID) {
+        std::vector<Tri> randomMeshTris = std::vector<Tri>();
+
+        for (int i=0; i < numTris; i++) {
+            randomMeshTris.emplace_back(
+                Vec3(randRange(seed, min, max), randRange(seed, min, max), randRange(seed, min, max)),
+                Vec3(randRange(seed, min, max), randRange(seed, min, max), randRange(seed, min, max)),
+                Vec3(randRange(seed, min, max), randRange(seed, min, max), randRange(seed, min, max)),
+                materialID
+            );
+        }
+
+        return HostMesh(randomMeshTris);
+    }
+
     std::vector<Tri> getTris() const {
         return tris;
     }
