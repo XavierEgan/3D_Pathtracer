@@ -33,7 +33,7 @@ The pathtracer is incredibly slow, lacking many basic optimisations. However, th
 **Compiler Flags:** -Wall -g -mavx -O3 (although mavx is not used)  
 #### Render Params
 **Dimensions:** 1024x1024  
-**Rays Per Pixel:** 2048  
+**Rays Per Pixel:** 8192  
 **Max Bounces Per Ray:** 20  
 **Horizontal FOV:** 90  
 **Triangles:** 30
