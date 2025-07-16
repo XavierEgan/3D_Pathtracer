@@ -70,7 +70,7 @@ struct Pathtracer {
 
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
-        printf("Rendering took: %fs", duration.count()/1000.0f);
+        printf("Rendering took: %fs\n", duration.count()/1000.0f);
 
         err = cudaGetLastError();
         if (err != cudaSuccess) {
@@ -172,8 +172,6 @@ int main(void) {
     HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
-    auto v = hostResourceManager.hostMeshManager.getMeshs()[0].getTris()[0].v0;
-
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
     pathtracer.render((char*)"test.jpg");
 

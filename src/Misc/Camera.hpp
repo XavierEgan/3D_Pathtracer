@@ -8,6 +8,8 @@
 struct ScreenParams {
     unsigned int width;
     unsigned int height;
+    float widthOnTwo;
+    float heightOnTwo;
     float verticalFov;
     float horizontalFov;
     float focalLength;
@@ -20,7 +22,25 @@ struct ScreenParams {
     float pxHeight;
     float pxWidth;
 
-    ScreenParams(unsigned int width, unsigned int height, float verticalFov, float horizontalFov, float focalLength, unsigned int rayPerPixel, unsigned int maxBounces) : width(width), height(height), verticalFov(verticalFov), horizontalFov(horizontalFov), focalLength(focalLength), rayPerPixel(rayPerPixel), maxBounces(maxBounces) {
+    ScreenParams(
+        unsigned int width, 
+        unsigned int height, 
+        float verticalFov, 
+        float horizontalFov, 
+        float focalLength, 
+        unsigned int rayPerPixel, 
+        unsigned int maxBounces
+    ) : 
+        width(width), 
+        height(height),
+        widthOnTwo((float)width/2.0f),
+        heightOnTwo((float)height/2.0f),
+        verticalFov(verticalFov), 
+        horizontalFov(horizontalFov), 
+        focalLength(focalLength), 
+        rayPerPixel(rayPerPixel), 
+        maxBounces(maxBounces) 
+    {
         verticalHalfScale = std::abs(std::tan(verticalFov * 0.5f) * focalLength);
         horizontalHalfScale = std::abs(std::tan(horizontalFov * 0.5f) * focalLength);
 
@@ -39,15 +59,19 @@ struct Camera {
     Vec3 right;
     Vec3 up;
 
+    Vec3 precomputedForwardComponent;
+
     ScreenParams screenParams;
 
     Camera(Vec3 pos, Vec3 forward, ScreenParams screenParams) : pos(pos), forward(forward.normalized()), screenParams(screenParams) {
         // right is the same as the cross product between the forward vector and the forward vector shifted up a lil 
-        right = (forward.normalized().cross(forward + Vec3(0,.1,0))).normalized();
+        right = (this->forward.cross(forward + Vec3(0,.1,0))).normalized();
 
         // up is the cross between right a forward in that order
-        up = (right.cross(forward.normalized())).normalized();
+        up = (right.cross(this->forward)).normalized();
 
+
+        precomputedForwardComponent = this->forward * screenParams.focalLength;
         // forward.print("Camera forward");
         // right.print("Camera right");
         // up.print("Camera up");

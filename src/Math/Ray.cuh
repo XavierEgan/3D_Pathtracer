@@ -49,50 +49,18 @@ struct Ray {
 
     __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
     __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) {
-        float u1 = randUniform(seed);
-        float u2 = randUniform(seed);
+    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {}
 
-        Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
-        Vec3 upComponent = camera.up * ((((float)camera.screenParams.height/2) - planeY) + u1) * camera.screenParams.pxHeight;
-        Vec3 rightComponent = camera.right * (-(((float)camera.screenParams.width/2) - planeX) + u2) * camera.screenParams.pxWidth;
-
-        direction = (forwardComponent + upComponent + rightComponent).normalized();
-        origin = camera.pos;
-
-        // printf("x:%d, y:%d -- Quadrant %d\n\tRayDir:(%.2f, %.2f, %.2f) -- Rayforward:(%.2f, %.2f, %.2f) -- Rayup:(%.2f, %.2f, %.2f) -- Rayright:(%.2f, %.2f, %.2f)\n\tforward:(%.2f, %.2f, %.2f) -- up:(%.2f, %.2f, %.2f) -- right:(%.2f, %.2f, %.2f)\n\tu1:%f, u2:%f\n\tcalcX: %d, calcY: %d\n\tpxHeight:%f, pxWidth:%f\n", 
-        //     planeX, planeY,  
-        //     planeY<camera.screenParams.height/2 ? (planeX < camera.screenParams.width/2 ? 2 : 1) : (planeX < camera.screenParams.width/2 ? 3 : 4),
-        //     direction.x, direction.y, direction.z,
-
-        //     forwardComponent.x, forwardComponent.y, forwardComponent.z, 
-        //     upComponent.x, upComponent.y, upComponent.z, 
-        //     rightComponent.x, rightComponent.y, rightComponent.z,
-
-        //     camera.forward.x, camera.forward.y, camera.forward.z,
-        //     camera.up.x, camera.up.y, camera.up.z,
-        //     camera.right.x, camera.right.y, camera.right.z,
-            
-        //     u1, u2,
-
-        //     ((camera.screenParams.height/2) - planeY),
-        //     -((camera.screenParams.width/2) - planeX),
-
-        //     camera.screenParams.pxHeight,
-        //     camera.screenParams.pxWidth
-        // );
-    }
-
-    __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera, unsigned int& seed) {
-        Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
-        Vec3 upComponent = camera.up * ((((float)camera.screenParams.height/2) - planeY) + subPixelOffsetY) * camera.screenParams.pxHeight;
-        Vec3 rightComponent = camera.right * (-(((float)camera.screenParams.width/2) - planeX) + subPixelOffsetX) * camera.screenParams.pxWidth;
+    __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera) {
+        Vec3 forwardComponent = camera.precomputedForwardComponent;
+        Vec3 upComponent = camera.up * ((camera.screenParams.heightOnTwo - planeY) + subPixelOffsetY) * camera.screenParams.pxHeight;
+        Vec3 rightComponent = camera.right * ((planeX - camera.screenParams.widthOnTwo) + subPixelOffsetX) * camera.screenParams.pxWidth;
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = camera.pos;
     }
 
-    __device__ TriHit rayTriIntercept(const Tri& tri) const {
+    __device__ bool rayIntersectsTri(const CoreTri& tri) const {
         //Möller–Trumbore intersection algorithm
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
@@ -100,7 +68,7 @@ struct Ray {
         float det = edge1.dot(rayCrossEdge2);
 
         if (det > -1e-4f && det < 1e-4f) {
-            return TriHit();
+            return false;
         }
 
         float inv_det = 1.0 / det;
@@ -108,28 +76,46 @@ struct Ray {
         float u = inv_det * s.dot(rayCrossEdge2);
 
         if (u < 0.0f || u > 1.0f) {
-            return TriHit();
+            return false;
         }
 
         Vec3 sCrossEdge1 = s.cross(edge1);
         float v = inv_det * direction.dot(sCrossEdge1);
 
         if (v < 0.0f || u + v > 1.0f) {
-            return TriHit();
+            return false;
         }
 
         float t = inv_det * edge2.dot(sCrossEdge1);
 
         if (t > 1e-4f) {
-            return TriHit(origin + direction * t, t, Vec3(1.0f - (u + v), u, v), &tri);
+            return true;
         } else {
-            return TriHit();
+            return false;
         }
+    }
+
+    __device__ TriHit getTriHit(const Tri& tri) const {
+        Vec3 edge1 = tri.coreTri.v1 - tri.coreTri.v0;
+        Vec3 edge2 = tri.coreTri.v2 - tri.coreTri.v0;
+        Vec3 rayCrossEdge2 = direction.cross(edge2);
+        float det = edge1.dot(rayCrossEdge2);
+
+        float inv_det = 1.0 / det;
+        Vec3 s = origin - tri.coreTri.v0;
+        float u = inv_det * s.dot(rayCrossEdge2);
+
+        Vec3 sCrossEdge1 = s.cross(edge1);
+        float v = inv_det * direction.dot(sCrossEdge1);
+
+        float t = inv_det * edge2.dot(sCrossEdge1);
+
+        return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri);
     }
 
     __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer, const PixelOptimisationReport& pixelOptimisationReport, bool cameraRay) const {
         if (cameraRay && pixelOptimisationReport.isCoherentPixel) {
-            return rayTriIntercept(pixelOptimisationReport.coherentTri);
+            return getTriHit(pixelOptimisationReport.coherentTri);
         }
 
         // store the closest hit so far
@@ -137,10 +123,15 @@ struct Ray {
         bool hitFlag = false;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
+            const CoreTri& coreTri = deviceTriBuffer.getCoreTri(i);
+
+            if (!rayIntersectsTri(coreTri)) {
+                continue;
+            }
 
             const Tri& tri = deviceTriBuffer.getTri(i);
 
-            TriHit triHit = this->rayTriIntercept(tri);
+            TriHit triHit = this->getTriHit(tri);
 
             if (triHit.hit) {
                 // we have a hit!
@@ -228,7 +219,7 @@ struct Ray {
 
         Vec3 UV = triHit.tri->getUV(triHit.baryCoords);
 
-        Vec3 edge1 = (triHit.tri->v1 - triHit.tri->v0).normalized();
+        Vec3 edge1 = (triHit.tri->coreTri.v1 - triHit.tri->coreTri.v0).normalized();
         Vec3 normalOffset = material.getNormalOffset(UV.x, UV.y);
         Vec3 shiftedTriNormal = getNormalFromOffset(triHit.tri->normal, edge1, normalOffset);
         

@@ -18,11 +18,12 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
 
     PixelOptimisationReport dummyReport = PixelOptimisationReport(false, false, Tri());
 
+    #pragma unroll
     for (int x=0; x < 3; x++) {
         for (int y=0; y < 3; y++) {
             subPixelOffsetX = x * .5;
             subPixelOffsetY = y * .5;
-            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
+            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera);
 
             triHit = ray.getTriIntersection(deviceTriBuffer, dummyReport, false);
 
@@ -65,7 +66,7 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
     
     unsigned int seed = 12345 * x * y;
 
-    PixelOptimisationReport pixelOptimisationReport= pixelOptimisationsCheck(deviceTriBuffer, camera, x, y, seed);
+    PixelOptimisationReport pixelOptimisationReport = pixelOptimisationsCheck(deviceTriBuffer, camera, x, y, seed);
 
     if (pixelOptimisationReport.isBlankPixel) {
         deviceScreenBuffer.write(Vec3(), x, y);

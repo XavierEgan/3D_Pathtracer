@@ -5,7 +5,7 @@ This project is a 3D pathtracer implemented in C++ with hardware acceleration us
 Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~1,520.5x** speed improvement (more details in Performance Evolution section below).
 
 ![alt text](Readme_Images/img1.jpg)
-*Physically accurate global illumination with complex material interactions. The left wall has 0.7 roughness, creating realistic mixed diffuse-specular reflections.*\
+*global illumination with complex material interactions. The left wall has 0.7 roughness, creating realistic mixed diffuse-specular reflections.*\
 **Note**: Gamma correction disabled for artistic preference
 - **Render Time**: 13.2 seconds  
 - **Resolution**: 2048×2048 (4.2M pixels)
@@ -91,6 +91,8 @@ We will be Benchmarking with this image:
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
 **Starting Render Time:** 45.6s
+
+**NOTE:** Timings have quite a large variance of up to +-2s depending on many factors
 
 ### Early Pixel Termination (1.065x speedup)
 We can cast 9 strategic rays (corners, edges, middle) And if all them dont hit anything, we consider the pixel to be black and early return.
@@ -238,5 +240,16 @@ __device__ const Tri& getTri(unsigned int i) const {
 Final time after optimisation: `24.3s`\
 Thats a `27.3/24.3 =` **1.12x speedup**
 
-### Rewrite `bsdfReflect` to use branchless programming
-`bsdfReflect` was in desperate need of a rewrite anyway
+### Rewrite `bsdfReflect` (1.08x speedup)
+`bsdfReflect` was in desperate need of a rewrite, the code was messy and ineficient
+
+The main way this improved performance was removing branches and only performing computation needed for the type of reflection
+
+Final time after optimisation: `22.5s`\
+Thats a `24.3/22.5 =` **1.08x speedup**
+
+### Split Tri into CoreTri and Tri (1.16x speedup)
+This optimisation makes ray intersection checking faster since it stores a new struct, `CoreTri` (3 floats, 12 bytes) in a seperate array from `Tri`. When the loop inside `getTriIntersection` runs, we get more cache hits. Since a Cache line is 64 bytes we can store 64/12 ~ 5 `CoreTri` in a single cache line. Also the array is allocated contiguously in memory, meaning the `CoreTri`s will be on the same cache lines.
+
+Final time after optimisation: `19.47s`\
+Thats a `22.5/19.47 =` **1.16x speedup**
