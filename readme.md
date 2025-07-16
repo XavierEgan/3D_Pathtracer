@@ -2,12 +2,11 @@
 ## Overview
 This project is a 3D pathtracer implemented in C++ with hardware acceleration using CUDA.
 
-Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~1,520.5x** speed improvement (more details in Performance Evolution section below).
+Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~3664.44x** speed improvement (more details in Performance Evolution section below).
 
 ![alt text](Readme_Images/img1.jpg)
-*global illumination with complex material interactions. The left wall has 0.7 roughness, creating realistic mixed diffuse-specular reflections.*\
 **Note**: Gamma correction disabled for artistic preference
-- **Render Time**: 13.2 seconds  
+- **Render Time**: 6.1 seconds
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 10 triangles
@@ -51,31 +50,32 @@ Release\d.exe
 ```
 
 ## Performance Evolution
-- **V1**: Single Threaded CPU (~5 hours above)
-- **V2**: CUDA parallel processing (~13 seconds)
+- **V1**: Single Threaded CPU (~5 hours)
+- **V2**: CUDA parallel processing (~6.1 seconds)
+- **V3**: OptiX and OpenGL Mathematics (GLM) (Unknown, future project)
 
 **NOTE:** V1 did have multithreaded through #pragma omp parallel for, however it was harder to benchmark, so single threaded numbers are being used
 ### Improvement Over V1
 
 In V1 of this project, the following image took `18322.2s` to render.
 ![alt text](Readme_Images/img2.png)
-- **Resolution**: 1024x1024
-- **Samples**: 8,192 rays per pixel  
+- **Resolution**: 2048×2048
+- **Samples**: 2,048 rays per pixel  
 - **Scene Complexity**: 30 triangles
 - **Hardware**: Intel Core i9-12900k
 
-Comparing to a render of V2, which took `48.2s` to render
+Comparing to a render of V2, which took `5.0s` to render
 ![alt text](Readme_Images/img3.png)
 - **Resolution**: 2048×2048 (4.2M pixels)
-- **Samples**: 8,192 rays per pixel
+- **Samples**: 2,048 rays per pixel
 - **Scene Complexity**: 30 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
-**NOTE:** The images are not identical, however they are close enough in complexity to reasonably compare performance
+**NOTE:** The images are not identical, however they the main differences are simple texture and color. The geometry is identical.
 
-The render from V2 was `4x` more complex than the render from V1 (`2048x2048 = (2*1024)x(2*1024) = 4*(1024x1024)`)
+Performance Speedup: `18322.2 / 5.0 =` **3664.44x Speedup**
 
-Performance Speedup: `(18322.2 * 4) / 48.2 =` **1520.5x Speedup**
+That means every second spent rendering with V2 is equivelent to an hour of rending with V1
 
 #### Why not 16,384x speedup?
 - **Texture sampling overhead** - V2 includes texture mapping
@@ -84,7 +84,7 @@ Performance Speedup: `(18322.2 * 4) / 48.2 =` **1520.5x Speedup**
 
 ## Optimisations
 We will be Benchmarking with this image:
-![alt text](Readme_Images/img3.png)
+![alt text](Readme_Images/img4.png)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 30 triangles
@@ -253,3 +253,15 @@ This optimisation makes ray intersection checking faster since it stores a new s
 
 Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
+
+## Limitations
+- **No Energy Conservation or Proper Global Illumination:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This misses indirect lighting (e.g., light scattering off walls to illuminate shadows) and doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
+- **Simplified BSDF and Sampling:** Reflections are handled with a basic mix of diffuse and specular based on roughness, without advanced features like Fresnel effects, microfacet models, or importance sampling. Paths use a fixed number of bounces without Russian Roulette, which introduces bias and inefficiency.
+
+These choices were made to keep the code manageable as a first-year student project, allowing me to focus on core implementation rather than perfect theory.
+
+
+## What I learned
+- **Parallel Computing with CUDA:** Optimizing for GPU parallelism (e.g., pixel coherence checks and cache-friendly structs) taught me about thread management, memory access patterns, and achieving massive speedups (like 3664x over CPU).
+- **3D Math and Graphics Fundamentals:** Working with rays, vectors, intersections, and materials deepened my understanding of spatial thinking and rendering pipelines.
+- **C++ Best Practices:** From debugging device code to using preprocessors for error checking, I improved my proficiency in low-level programming and performance tuning.
