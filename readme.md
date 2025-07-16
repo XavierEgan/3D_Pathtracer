@@ -82,7 +82,7 @@ Performance Speedup: `(18322.2 * 4) / 48.2 =` **1520.5x Speedup**
 - **Launch overhead** - CUDA kernel launches have costs
 - **Unoptimized code** - V2 is initial implementation without optimizations
 
-### Optimisations
+## Optimisations
 We will be Benchmarking with this image:
 ![alt text](Readme_Images/img3.png)
 - **Resolution**: 2048×2048 (4.2M pixels)
@@ -90,9 +90,9 @@ We will be Benchmarking with this image:
 - **Scene Complexity**: 30 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
-**Starting Render Time:** 45.6
+**Starting Render Time:** 45.6s
 
-#### Early Pixel Termination (1.065x speedup)
+### Early Pixel Termination (1.065x speedup)
 We can cast 9 strategic rays (corners, edges, middle) And if all them dont hit anything, we consider the pixel to be black and early return.
 
 In code that looks like this:
@@ -115,13 +115,39 @@ __device__ bool isBlankPixel(const DeviceTriBuffer& deviceTriBuffer, const Camer
 }
 ```
 
-Final time after optimisation: `42.8s`
+Final time after optimisation: `42.8s`\
+Thats a `45.6/42.8 =` **1.065x speedup**
 
-#### Change RayHit To Use Pointers
+### Change `TriHit` To Use Pointers (1.48x speedup)
 This optimisation was descovered by accident while working on the below optimisation (Ray Coherence)
 
+`TriHit` previously Looked like this
+```C++
+struct TriHit {
+    Vec3 intersecPoint;
+    float dist;
+    Vec3 baryCoords;
+    Tri tri;
+    bool hit;
+};
+```
+However, we can store a reference to `Tri` instead of copying the entire tri each time.
+```C++
+struct TriHit {
+    Vec3 intersecPoint;
+    float dist;
+    Vec3 baryCoords;
+    const Tri* tri;
+    bool hit;
+};
+```
 
-#### Ray Coherence
+The reason this has such a dramatic performance boost is that TriHit is in the hottest loop in the entire program. It's returned for each ray-tri intersection check, which is the heart of the 3d pathtracer
+
+Final time after optimisation: `29.0s`\
+Thats a `42.8/29.0 =` **1.48x speedup**
+
+### Ray Coherence
 Similar to Early Pixel Termination, we can cast 9 strategic rays and check if they all hit the same triangle. If they all do then we can skip the first ray-tri intersection check, and only intersect with the one triangle.
 
 We can modify the Early Pixel Termination code to also check for this by returning a POD struct `pixelOptimisationReport`

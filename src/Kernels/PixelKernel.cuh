@@ -111,7 +111,7 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
             DeviceMaterial& triMaterial = deviceMaterialManager.getMaterial(triHit.tri->materialID);
 
             if (triMaterial.lightSource) {
-                Vec3 triUV = triHit.tri->getUV(*triHit.baryCoords);
+                Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
                 lightSource = triMaterial.getAlbedo(triUV.x, triUV.y);
                 //lightSource.print("lightSource");
                 break;

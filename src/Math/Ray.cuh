@@ -22,14 +22,14 @@
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 
 struct TriHit {
-    const Vec3* intersecPoint;
+    Vec3 intersecPoint;
     float dist;
-    const Vec3* baryCoords;
+    Vec3 baryCoords;
     const Tri* tri;
     bool hit;
 
-    __host__ __device__ TriHit() : intersecPoint(nullptr), dist(-1), baryCoords(nullptr), tri(nullptr), hit(false) {}
-    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri& tri) : intersecPoint(&intersecPoint), dist(dist), baryCoords(&baryCoords), tri(&tri), hit(true) {}
+    __host__ __device__ TriHit() : dist(-1), tri(nullptr), hit(false) {}
+    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri& tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(&tri), hit(true) {}
 };
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
@@ -179,7 +179,7 @@ struct Ray {
         Vec3& g_origin = origin;
 
         // get uv coords of intersection
-        Vec3 triUV = triHit.tri->getUV(*triHit.baryCoords);
+        Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
 
         // prod the albedo
         Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
@@ -250,14 +250,14 @@ struct Ray {
                 g_direction = (g_direction - 2 * refractionNormal.dot(g_direction) * refractionNormal).normalized();
 
                 // set the origin of our new ray
-                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
                 
             } else {
                 // refraction
                 g_direction = (n * g_direction + ((n * cosThetaI) - sqrtf(discriminant)) * refractionNormal).normalized();
 
                 // set the origin of our new ray
-                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
             }
         } else {
             // we need to reflect
@@ -279,13 +279,13 @@ struct Ray {
 
                 g_direction = (localRay * localToGlobal).normalized();
 
-                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
             } else {
                 // mirror reflect
                 // R = I - 2(ProjN(I))
                 g_direction = (g_direction - 2*(g_direction.dot(g_normal))*g_normal).normalized();
 
-                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
             }
         }
     }
