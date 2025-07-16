@@ -30,7 +30,7 @@ struct TriHit {
     bool hit;
 
     __host__ __device__ TriHit() : dist(-1), tri(nullptr), hit(false) {}
-    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri& tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(&tri), hit(true) {}
+    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri* tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri), hit(true) {}
 };
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
@@ -125,7 +125,7 @@ struct Ray {
         float t = inv_det * edge2.dot(sCrossEdge1);
 
         if (t > 1e-4f) {
-            return TriHit(origin + direction * t, t, Vec3(1.0f - (u + v), u, v), tri);
+            return TriHit(origin + direction * t, t, Vec3(1.0f - (u + v), u, v), &tri);
         } else {
             return TriHit();
         }
@@ -137,7 +137,7 @@ struct Ray {
         }
 
         // store the closest hit so far
-        TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
+        TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), nullptr);
         bool hitFlag = false;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {

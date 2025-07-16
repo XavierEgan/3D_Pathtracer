@@ -220,7 +220,7 @@ We can now also modify the ray-tri intersection code to skip if we are a coheren
 Final time after optimisation: `27.3s`\
 Thats a `28.9/27.3 =` **1.12x speedup**
 
-### Remove Error Checking In Release Build
+### Remove Error Checking In Release Build (1.12x speedup)
 Since we can be reasonably confident that out of bound memory accesses wont take place in build, we can use a preprocessor conditional to not run the checks.
 
 This is especially usefull in the `getTri` method, as this is run for every ray-tri intercept check
@@ -235,9 +235,6 @@ __device__ const Tri& getTri(unsigned int i) const {
 }
 ```
 
-Final time after optimisation: `27.3s`\
+Final time after optimisation: `24.3s`\
 Thats a `27.3/24.3 =` **1.12x speedup**
-
-### Prefer SoA over AoS
-SoA stands for Structure of Arrays, AoS stands for Array of Structures
 
