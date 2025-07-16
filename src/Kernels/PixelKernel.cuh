@@ -20,7 +20,7 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
     }
 
     if (x == 0 && y == 0) {
-        deviceMaterialManager.print();
+        //deviceMaterialManager.print();
     }
  
     unsigned int seed = 12345 * x * y;

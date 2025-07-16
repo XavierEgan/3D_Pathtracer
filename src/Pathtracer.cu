@@ -1,7 +1,9 @@
 #pragma once
 #include <vector>
+#include <array>
 #include <cstdlib>
 #include <iostream>
+#include <chrono>
 
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
@@ -40,13 +42,23 @@ struct Pathtracer {
         DeviceMaterialManager* deviceMaterialManagerPointer;
         DeviceTriBuffer* deviceTriBufferPointer;
 
-        cudaMalloc(&deviceScreenBufferPointer, sizeof(DeviceScreenBuffer));
-        cudaMalloc(&deviceMaterialManagerPointer, sizeof(DeviceMaterialManager));
-        cudaMalloc(&deviceTriBufferPointer, sizeof(DeviceTriBuffer));
+        std::array<cudaError_t, 6> errs = std::array<cudaError_t, 6>();
 
-        cudaMemcpy(deviceScreenBufferPointer, &deviceScreenBuffer, sizeof(DeviceScreenBuffer), cudaMemcpyHostToDevice);
-        cudaMemcpy(deviceMaterialManagerPointer, &deviceMaterialManager, sizeof(DeviceMaterialManager), cudaMemcpyHostToDevice);
-        cudaMemcpy(deviceTriBufferPointer, &deviceTriBuffer, sizeof(DeviceTriBuffer), cudaMemcpyHostToDevice);
+        errs[0] = cudaMalloc(&deviceScreenBufferPointer, sizeof(DeviceScreenBuffer));
+        errs[1] = cudaMalloc(&deviceMaterialManagerPointer, sizeof(DeviceMaterialManager));
+        errs[2] = cudaMalloc(&deviceTriBufferPointer, sizeof(DeviceTriBuffer));
+
+        errs[3] = cudaMemcpy(deviceScreenBufferPointer, &deviceScreenBuffer, sizeof(DeviceScreenBuffer), cudaMemcpyHostToDevice);
+        errs[4] = cudaMemcpy(deviceMaterialManagerPointer, &deviceMaterialManager, sizeof(DeviceMaterialManager), cudaMemcpyHostToDevice);
+        errs[5] = cudaMemcpy(deviceTriBufferPointer, &deviceTriBuffer, sizeof(DeviceTriBuffer), cudaMemcpyHostToDevice);
+
+        for (cudaError_t err : errs) {
+            if (err != cudaSuccess) {
+                printf("[HOST] Something Failed in render: %s", cudaGetErrorString(err));
+            }
+        }
+
+        auto start = std::chrono::high_resolution_clock::now();
 
         getPixelColorKernal<<<gridSize, blockSize>>>(deviceMaterialManagerPointer, deviceTriBufferPointer, deviceScreenBufferPointer, camera);
         cudaError_t err = cudaGetLastError();
@@ -55,6 +67,10 @@ struct Pathtracer {
         }
 
         cudaDeviceSynchronize();
+
+        auto end = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end-start);
+        printf("Rendering took: %fs", duration.count()/1000.0f);
 
         err = cudaGetLastError();
         if (err != cudaSuccess) {
@@ -88,8 +104,8 @@ int main(void) {
     const float verticalFov = 90 * (3.1415f/180);
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 32;
-    const unsigned int maxBounces = 128 * 32;
+    const unsigned int rayPerPixel = 128 * 64;
+    const unsigned int maxBounces = 32;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
 
@@ -105,7 +121,7 @@ int main(void) {
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 0.0f, false, HostMap(Vec3(0.8f, 0.8f, 0.8f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 0.7f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 

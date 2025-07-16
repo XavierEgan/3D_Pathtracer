@@ -17,7 +17,7 @@ public:
         const std::vector<HostMaterial> hostMaterials = hostMaterialManager.getMaterials();
         numMaterials = hostMaterials.size();
 
-        hostMaterialManager.print();
+        //hostMaterialManager.print();
 
         std::vector<DeviceMaterial> deviceMaterials;
 

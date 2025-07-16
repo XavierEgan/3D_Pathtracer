@@ -163,7 +163,7 @@ struct Ray {
         float u1 = randUniform(localSeed);
         float u2 = randUniform(localSeed);
         bool reflect = u1 < material.transmission;
-        bool diffuse = u2 < material.roughness;
+        bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
 
         // for naming convention
         Vec3& g_direction = direction;
