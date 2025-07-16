@@ -22,14 +22,14 @@
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 
 struct TriHit {
-    Vec3 intersecPoint;
+    const Vec3* intersecPoint;
     float dist;
-    Vec3 baryCoords;
-    Tri tri;
+    const Vec3* baryCoords;
+    const Tri* tri;
     bool hit;
 
-    __host__ __device__ TriHit() : hit(false) {}
-    __host__ __device__ TriHit(Vec3 intersecPoint, float dist, Vec3 baryCoords, Tri tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri), hit(true) {}
+    __host__ __device__ TriHit() : intersecPoint(nullptr), dist(-1), baryCoords(nullptr), tri(nullptr), hit(false) {}
+    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri& tri) : intersecPoint(&intersecPoint), dist(dist), baryCoords(&baryCoords), tri(&tri), hit(true) {}
 };
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
@@ -86,6 +86,15 @@ struct Ray {
         // );
     }
 
+    __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera, unsigned int& seed) {
+        Vec3 forwardComponent = camera.forward * camera.screenParams.focalLength;
+        Vec3 upComponent = camera.up * ((((float)camera.screenParams.height/2) - planeY) + subPixelOffsetY) * camera.screenParams.pxHeight;
+        Vec3 rightComponent = camera.right * (-(((float)camera.screenParams.width/2) - planeX) + subPixelOffsetX) * camera.screenParams.pxWidth;
+
+        direction = (forwardComponent + upComponent + rightComponent).normalized();
+        origin = camera.pos;
+    }
+
     __device__ TriHit rayTriIntercept(const Tri& tri) const {
         //Möller–Trumbore intersection algorithm
         Vec3 edge1 = tri.v1 - tri.v0;
@@ -121,7 +130,7 @@ struct Ray {
         }
     }
 
-    __device__ TriHit getTriIntersection(DeviceTriBuffer& deviceTriBuffer) const {
+    __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer) const {
         // store the closest hit so far
         TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), Tri(Vec3(), Vec3(), Vec3(), 0));
         bool hitFlag = false;
@@ -170,15 +179,15 @@ struct Ray {
         Vec3& g_origin = origin;
 
         // get uv coords of intersection
-        Vec3 triUV = triHit.tri.getUV(triHit.baryCoords);
+        Vec3 triUV = triHit.tri->getUV(*triHit.baryCoords);
 
         // prod the albedo
         Vec3 triAlbedo = material.getAlbedo(triUV.x,triUV.y);
         runningAlbedo *= triAlbedo;
 
         // get tri normal
-        Vec3 g_edge1 = triHit.tri.v1 - triHit.tri.v0;
-        Vec3 g_edge2 = triHit.tri.v2 - triHit.tri.v0;
+        Vec3 g_edge1 = triHit.tri->v1 - triHit.tri->v0;
+        Vec3 g_edge2 = triHit.tri->v2 - triHit.tri->v0;
         Vec3 g_triNormal = (g_edge1).cross(g_edge2).normalized();
 
         // offset the normal
@@ -241,14 +250,14 @@ struct Ray {
                 g_direction = (g_direction - 2 * refractionNormal.dot(g_direction) * refractionNormal).normalized();
 
                 // set the origin of our new ray
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
                 
             } else {
                 // refraction
                 g_direction = (n * g_direction + ((n * cosThetaI) - sqrtf(discriminant)) * refractionNormal).normalized();
 
                 // set the origin of our new ray
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
             }
         } else {
             // we need to reflect
@@ -270,13 +279,13 @@ struct Ray {
 
                 g_direction = (localRay * localToGlobal).normalized();
 
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
             } else {
                 // mirror reflect
                 // R = I - 2(ProjN(I))
                 g_direction = (g_direction - 2*(g_direction.dot(g_normal))*g_normal).normalized();
 
-                g_origin = (triHit.intersecPoint).epsilonShift(g_direction);
+                g_origin = (*triHit.intersecPoint).epsilonShift(g_direction);
             }
         }
     }

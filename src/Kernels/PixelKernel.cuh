@@ -5,9 +5,66 @@
 #include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 
+struct PixelOptimisationReport {
+    bool isBlankPixel;
+    bool isCoherentPixel;
+    const Tri& coherentTri;
+
+    __device__ PixelOptimisationReport(
+        bool isBlankPixel, 
+        bool isCoherentPixel, 
+        const Tri& coherentTri
+    ) : 
+        isBlankPixel(isBlankPixel),
+        isCoherentPixel(isCoherentPixel),
+        coherentTri(coherentTri)
+    {}
+};
+
+__device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
+    float subPixelOffsetX, subPixelOffsetY;
+    int missedRayCount = 0;
+
+    const Tri* referenceTriPointer = nullptr;
+
+    TriHit triHit;
+
+    bool coherentTri = true;
+
+    for (int x=0; x < 3; x++) {
+        for (int y=0; y < 3; y++) {
+            subPixelOffsetX = x * .5;
+            subPixelOffsetY = y * .5;
+            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
+
+            triHit = ray.getTriIntersection(deviceTriBuffer);
+
+            if (x==0 && y==0) {
+                if (triHit.hit) {
+                    referenceTriPointer = triHit.tri;
+                } else {
+                    coherentTri = false;
+                }
+            }
+
+            if (coherentTri) {
+                coherentTri = referenceTriPointer == triHit.tri;
+            }
+
+            missedRayCount += !triHit.hit;
+        }
+    }
+
+    return PixelOptimisationReport(
+        missedRayCount == 9,
+        coherentTri,
+        *referenceTriPointer
+    );
+}
+
 __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManagerPointer, DeviceTriBuffer* deviceTriBufferPointer, DeviceScreenBuffer* deviceScreenBufferPointer,  Camera camera) {
-    DeviceMaterialManager& deviceMaterialManager = *deviceMaterialManagerPointer;
-    DeviceTriBuffer& deviceTriBuffer = *deviceTriBufferPointer;
+    const DeviceMaterialManager& deviceMaterialManager = *deviceMaterialManagerPointer;
+    const DeviceTriBuffer& deviceTriBuffer = *deviceTriBufferPointer;
     DeviceScreenBuffer& deviceScreenBuffer = *deviceScreenBufferPointer;
     
     //printf("textureMap: %p\n", scene.deviceMaterials[1].textureMap.data);
@@ -18,12 +75,15 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         printf("early return, %d, %d\n", x, y);
         return;
     }
-
-    if (x == 0 && y == 0) {
-        //deviceMaterialManager.print();
-    }
- 
+    
     unsigned int seed = 12345 * x * y;
+
+    PixelOptimisationReport pixelOptimisationReport= pixelOptimisationsCheck(deviceTriBuffer, camera, x, y, seed);
+
+    if (pixelOptimisationReport.isBlankPixel) {
+        deviceScreenBuffer.write(Vec3(), x, y);
+        return;
+    }
 
     Vec3 runningPixelColor = Vec3(0.0f, 0.0f, 0.0f);
     for (size_t r = 0; r < camera.screenParams.rayPerPixel; r++) {
@@ -48,10 +108,10 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
 
             // we have a hit!
             // get the tris material
-            DeviceMaterial& triMaterial = deviceMaterialManager.getMaterial(triHit.tri.materialID);
+            DeviceMaterial& triMaterial = deviceMaterialManager.getMaterial(triHit.tri->materialID);
 
             if (triMaterial.lightSource) {
-                Vec3 triUV = triHit.tri.getUV(triHit.baryCoords);
+                Vec3 triUV = triHit.tri->getUV(*triHit.baryCoords);
                 lightSource = triMaterial.getAlbedo(triUV.x, triUV.y);
                 //lightSource.print("lightSource");
                 break;

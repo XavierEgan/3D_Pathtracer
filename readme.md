@@ -90,4 +90,105 @@ We will be Benchmarking with this image:
 - **Scene Complexity**: 30 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
-**Starting Render Time:** 48.2s
+**Starting Render Time:** 45.6
+
+#### Early Pixel Termination (1.065x speedup)
+We can cast 9 strategic rays (corners, edges, middle) And if all them dont hit anything, we consider the pixel to be black and early return.
+
+In code that looks like this:
+```C++
+__device__ bool isBlankPixel(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
+    float subPixelOffsetX, subPixelOffsetY;
+    int missedRayCount = 0;
+
+    for (int x=0; x < 3; x++) {
+        for (int y=0; y < 3; y++) {
+            subPixelOffsetX = x * .5;
+            subPixelOffsetY = y * .5;
+            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
+
+            missedRayCount += !ray.getTriIntersection(deviceTriBuffer).hit;
+        }
+    }
+
+    return missedRayCount == 9;
+}
+```
+
+Final time after optimisation: `42.8s`
+
+#### Change RayHit To Use Pointers
+This optimisation was descovered by accident while working on the below optimisation (Ray Coherence)
+
+
+#### Ray Coherence
+Similar to Early Pixel Termination, we can cast 9 strategic rays and check if they all hit the same triangle. If they all do then we can skip the first ray-tri intersection check, and only intersect with the one triangle.
+
+We can modify the Early Pixel Termination code to also check for this by returning a POD struct `pixelOptimisationReport`
+
+```C++
+struct pixelOptimisationReport {
+    bool isBlankPixel;
+    bool isCoherentPixel;
+    Tri& coherentTri;
+}
+```
+
+```C++
+struct PixelOptimisationReport {
+    bool isBlankPixel;
+    bool isCoherentPixel;
+    const Tri& coherentTri;
+
+    __device__ PixelOptimisationReport(
+        bool isBlankPixel, 
+        bool isCoherentPixel, 
+        const Tri& coherentTri
+    ) : 
+        isBlankPixel(isBlankPixel),
+        isCoherentPixel(isCoherentPixel),
+        coherentTri(coherentTri)
+    {}
+};
+
+__device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
+    float subPixelOffsetX, subPixelOffsetY;
+    int missedRayCount = 0;
+
+    const Tri* referenceTriPointer = nullptr;
+
+    TriHit triHit;
+
+    bool coherentTri = true;
+
+    for (int x=0; x < 3; x++) {
+        for (int y=0; y < 3; y++) {
+            subPixelOffsetX = x * .5;
+            subPixelOffsetY = y * .5;
+            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera, seed);
+
+            triHit = ray.getTriIntersection(deviceTriBuffer);
+
+            if (x==0 && y==0) {
+                if (triHit.hit) {
+                    referenceTriPointer = triHit.tri;
+                } else {
+                    coherentTri = false;
+                }
+            }
+
+            if (coherentTri) {
+                coherentTri = referenceTriPointer == triHit.tri;
+            }
+
+            missedRayCount += !triHit.hit;
+        }
+    }
+
+    return PixelOptimisationReport(
+        missedRayCount == 9,
+        coherentTri,
+        *referenceTriPointer
+    );
+}
+```
