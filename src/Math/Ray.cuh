@@ -12,7 +12,6 @@
 #include "Vec3.cuh"
 #include "Tri.cuh"
 #include "rand.cuh"
-#include "Transform3D.cuh"
 
 #include "../Misc/Camera.hpp"
 
