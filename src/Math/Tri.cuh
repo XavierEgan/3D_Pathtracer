@@ -14,7 +14,7 @@
 struct CoreTri {
     Vec3 v0, v1, v2;
 
-    __host__ __device__ CoreTri() = default;
+    __host__ __device__ CoreTri() {}
     __host__ __device__ CoreTri(Vec3 v0, Vec3 v1, Vec3 v2) : v0(v0), v1(v1), v2(v2) {}
 };
 

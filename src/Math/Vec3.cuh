@@ -196,22 +196,23 @@ struct Vec3 {
     }
 
     __host__ __device__ float length() const {
-        return std::sqrt(x*x + y*y + z*z);
+        return sqrtf(x*x + y*y + z*z);
+    }
+
+    __host__ __device__ float invLength() const {
+        return rsqrtf(x*x + y*y + z*z);
     }
 
     __host__ __device__ Vec3& normalize() {
-        float len = this->length();
-        if (len > 0.0f) {
-            this->x /= len;
-            this->y /= len;
-            this->z /= len;
-            return *this;
-        }
+        float invLen = this->invLength();
+        this->x *= invLen;
+        this->y *= invLen;
+        this->z *= invLen;
         return *this;
     }
 
     __host__ __device__ Vec3 normalized() const {
-        return *this / this->length();
+        return *this * this->invLength();
     }
 
     __host__ __device__ Vec3 epsilonShift(const Vec3& dir) const {
