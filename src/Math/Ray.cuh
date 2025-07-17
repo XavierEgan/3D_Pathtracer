@@ -30,7 +30,7 @@ struct TriHit {
     bool hit;
 
     __host__ __device__ TriHit() : dist(-1), tri(nullptr), hit(false) {}
-    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri* tri) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri), hit(true) {}
+    __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri* tri, bool hit) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri), hit(hit) {}
 };
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
@@ -60,41 +60,6 @@ struct Ray {
         origin = camera.pos;
     }
 
-    __device__ bool rayIntersectsTri(const CoreTri& tri) const {
-        //Möller–Trumbore intersection algorithm
-        Vec3 edge1 = tri.v1 - tri.v0;
-        Vec3 edge2 = tri.v2 - tri.v0;
-        Vec3 rayCrossEdge2 = direction.cross(edge2);
-        float det = edge1.dot(rayCrossEdge2);
-
-        if (det > -1e-4f && det < 1e-4f) {
-            return false;
-        }
-
-        float inv_det = 1.0 / det;
-        Vec3 s = origin - tri.v0;
-        float u = inv_det * s.dot(rayCrossEdge2);
-
-        if (u < 0.0f || u > 1.0f) {
-            return false;
-        }
-
-        Vec3 sCrossEdge1 = s.cross(edge1);
-        float v = inv_det * direction.dot(sCrossEdge1);
-
-        if (v < 0.0f || u + v > 1.0f) {
-            return false;
-        }
-
-        float t = inv_det * edge2.dot(sCrossEdge1);
-
-        if (t > 1e-4f) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     __device__ TriHit getTriHit(const Tri& tri) const {
         Vec3 edge1 = tri.coreTri.v1 - tri.coreTri.v0;
         Vec3 edge2 = tri.coreTri.v2 - tri.coreTri.v0;
@@ -110,7 +75,13 @@ struct Ray {
 
         float t = inv_det * edge2.dot(sCrossEdge1);
 
-        return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri);
+        bool hit = !(det > -1e-4f && det < 1e-4f) && 
+            u >= 0.0f && u <= 1.0f && 
+            v >= 0.0f && u + v <= 1.0f && 
+            t > 1e-4f;
+
+        
+        return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri, hit);
     }
 
     __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer, const PixelOptimisationReport& pixelOptimisationReport, bool cameraRay) const {
@@ -119,15 +90,11 @@ struct Ray {
         }
 
         // store the closest hit so far
-        TriHit closestHit = TriHit(Vec3(), 999999999.0f, Vec3(), nullptr);
+        TriHit closestHit = TriHit(Vec3(), 999999.0f, Vec3(), nullptr, false);
         bool hitFlag = false;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
             const CoreTri& coreTri = deviceTriBuffer.getCoreTri(i);
-
-            if (!rayIntersectsTri(coreTri)) {
-                continue;
-            }
 
             const Tri& tri = deviceTriBuffer.getTri(i);
 
@@ -143,12 +110,7 @@ struct Ray {
             }
         }
         
-        if (hitFlag) {
-            return closestHit;
-        } else {
-            // no hit
-            return TriHit();
-        }
+        return closestHit;
     }
 
     __device__ void refractReflect(Vec3& shiftedTriNormal, unsigned int& localSeed, const TriHit& triHit, const DeviceMaterial& material) {

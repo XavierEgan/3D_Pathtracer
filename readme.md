@@ -249,10 +249,112 @@ Final time after optimisation: `22.5s`\
 Thats a `24.3/22.5 =` **1.08x speedup**
 
 ### Split Tri into CoreTri and Tri (1.16x speedup)
-This optimisation makes ray intersection checking faster since it stores a new struct, `CoreTri` (3 floats, 12 bytes) in a seperate array from `Tri`. When the loop inside `getTriIntersection` runs, we get more cache hits. Since a Cache line is 64 bytes we can store 64/12 ~ 5 `CoreTri` in a single cache line. Also the array is allocated contiguously in memory, meaning the `CoreTri`s will be on the same cache lines.
+This optimisation makes ray intersection checking faster since it stores a new struct, `CoreTri` (9 floats, 36 bytes) in a seperate array from `Tri`. When the loop inside `getTriIntersection` runs, we get more cache hits. This is because when we arrange `CoreTri`s in contiguous memory, its more likely for data we need to be arranged on the same cache line. This means we are more likely to bring in the verticies (what we actually need for ray-tri intercept) into the cache, rather than bringing in UV's or other almost useless information (only usefull when we get a hit).
+
+Its important to note that at 36 bytes, `CoreTri` is not aligned with cache lines meaning we may bring in part of the next `CoreTri` into the cache, but not the whole thing
 
 Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
+
+### Split `CoreTri` into 9 float arrays (Failed speedup)
+The idea for this improvement was that more data can be fetched into the cache, since we read 9 floats and then pull 9 whole cache lines in. However this does not improve performance 
+```C++
+class DeviceTriBuffer {
+    Tri* tris;
+
+    float* coreTriVertex0Xs;
+    float* coreTriVertex0Ys;
+    float* coreTriVertex0Zs;
+
+    float* coreTriVertex1Xs;
+    float* coreTriVertex1Ys;
+    float* coreTriVertex1Zs;
+
+    float* coreTriVertex2Xs;
+    float* coreTriVertex2Ys;
+    float* coreTriVertex2Zs;
+    
+    size_t numTris;
+public:
+    __host__ DeviceTriBuffer() = delete;
+    __host__ DeviceTriBuffer(const HostMeshManager& hostMeshManager) {
+        std::vector<Tri> hostTris;
+        std::vector<float> hostCoreTriVertex0Xs;
+        std::vector<float> hostCoreTriVertex0Ys;
+        std::vector<float> hostCoreTriVertex0Zs;
+
+        std::vector<float> hostCoreTriVertex1Xs;
+        std::vector<float> hostCoreTriVertex1Ys;
+        std::vector<float> hostCoreTriVertex1Zs;
+
+        std::vector<float> hostCoreTriVertex2Xs;
+        std::vector<float> hostCoreTriVertex2Ys;
+        std::vector<float> hostCoreTriVertex2Zs;
+
+        int i=0;
+        for (HostMesh hm : hostMeshManager.getMeshs()) {
+            for (const Tri& t : hm.getTris()) {
+                hostTris.push_back(t);
+                
+                hostCoreTriVertex0Xs.push_back(t.coreTri.v0.x);
+                hostCoreTriVertex0Ys.push_back(t.coreTri.v0.y);
+                hostCoreTriVertex0Zs.push_back(t.coreTri.v0.z);
+
+                hostCoreTriVertex1Xs.push_back(t.coreTri.v1.x);
+                hostCoreTriVertex1Ys.push_back(t.coreTri.v1.y);
+                hostCoreTriVertex1Zs.push_back(t.coreTri.v1.z);
+
+                hostCoreTriVertex2Xs.push_back(t.coreTri.v2.x);
+                hostCoreTriVertex2Ys.push_back(t.coreTri.v2.y);
+                hostCoreTriVertex2Zs.push_back(t.coreTri.v2.z);
+            }
+            i++;
+        }
+
+        numTris = hostTris.size();
+
+        size_t size = hostTris.size() * sizeof(Tri);
+        size_t coreTriVertexSize = hostCoreTriVertex0Xs.size() * sizeof(float);
+
+        cudaError_t errs[20];
+
+        errs[2] = cudaMalloc(&coreTriVertex0Xs, coreTriVertexSize);
+        errs[3] = cudaMemcpy(coreTriVertex0Xs, hostCoreTriVertex0Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[4] = cudaMalloc(&coreTriVertex0Ys, coreTriVertexSize);
+        errs[5] = cudaMemcpy(coreTriVertex0Ys, hostCoreTriVertex0Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[6] = cudaMalloc(&coreTriVertex0Zs, coreTriVertexSize);
+        errs[7] = cudaMemcpy(coreTriVertex0Zs, hostCoreTriVertex0Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+
+        errs[8] = cudaMalloc(&coreTriVertex1Xs, coreTriVertexSize);
+        errs[9] = cudaMemcpy(coreTriVertex1Xs, hostCoreTriVertex1Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[10] = cudaMalloc(&coreTriVertex1Ys, coreTriVertexSize);
+        errs[11] = cudaMemcpy(coreTriVertex1Ys, hostCoreTriVertex1Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[12] = cudaMalloc(&coreTriVertex1Zs, coreTriVertexSize);
+        errs[13] = cudaMemcpy(coreTriVertex1Zs, hostCoreTriVertex1Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+
+        errs[14] = cudaMalloc(&coreTriVertex2Xs, coreTriVertexSize);
+        errs[15] = cudaMemcpy(coreTriVertex2Xs, hostCoreTriVertex2Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[16] = cudaMalloc(&coreTriVertex2Ys, coreTriVertexSize);
+        errs[17] = cudaMemcpy(coreTriVertex2Ys, hostCoreTriVertex2Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+        errs[18] = cudaMalloc(&coreTriVertex2Zs, coreTriVertexSize);
+        errs[19] = cudaMemcpy(coreTriVertex2Zs, hostCoreTriVertex2Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
+
+    __device__ const CoreTri& getCoreTri(unsigned int i) const {
+        #ifdef DEBUG
+        if (i >= numTris) {
+            printf("[DEVICE ERROR] in getCoreTri, index out of range");
+        }
+        #endif
+        return CoreTri(
+            Vec3(coreTriVertex0Xs[i], coreTriVertex0Ys[i], coreTriVertex0Zs[i]),
+            Vec3(coreTriVertex1Xs[i], coreTriVertex1Ys[i], coreTriVertex1Zs[i]),
+            Vec3(coreTriVertex2Xs[i], coreTriVertex2Ys[i], coreTriVertex2Zs[i])
+        );
+    }
+```
+
+
+
 
 ## Limitations
 - **No Energy Conservation or Proper Global Illumination:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This misses indirect lighting (e.g., light scattering off walls to illuminate shadows) and doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
