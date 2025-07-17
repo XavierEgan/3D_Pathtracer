@@ -65,7 +65,7 @@ In V1 of this project, the following image took `18322.2s` to render.
 - **Hardware**: Intel Core i9-12900k
 
 Comparing to a render of V2, which took `5.0s` to render
-![alt text](Readme_Images/img3.png)
+![alt text](Readme_Images/img3.jpg)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 2,048 rays per pixel
 - **Scene Complexity**: 30 triangles
