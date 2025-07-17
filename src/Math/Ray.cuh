@@ -60,6 +60,30 @@ struct Ray {
         origin = camera.pos;
     }
 
+    __device__ float getTriHitDist(const CoreTri& tri) const {
+        Vec3 edge1 = tri.v1 - tri.v0;
+        Vec3 edge2 = tri.v2 - tri.v0;
+        Vec3 rayCrossEdge2 = direction.cross(edge2);
+        float det = edge1.dot(rayCrossEdge2);
+
+        float inv_det = 1.0 / det;
+        Vec3 s = origin - tri.v0;
+        float u = inv_det * s.dot(rayCrossEdge2);
+
+        Vec3 sCrossEdge1 = s.cross(edge1);
+        float v = inv_det * direction.dot(sCrossEdge1);
+
+        float t = inv_det * edge2.dot(sCrossEdge1);
+
+        bool hit = !(det > -1e-4f && det < 1e-4f) && 
+            u >= 0.0f && u <= 1.0f && 
+            v >= 0.0f && u + v <= 1.0f && 
+            t > 1e-4f;
+
+        return hit ? t : -1.0f;
+
+    }
+
     __device__ TriHit getTriHit(const Tri& tri) const {
         Vec3 edge1 = tri.coreTri.v1 - tri.coreTri.v0;
         Vec3 edge2 = tri.coreTri.v2 - tri.coreTri.v0;
@@ -79,7 +103,6 @@ struct Ray {
             u >= 0.0f && u <= 1.0f && 
             v >= 0.0f && u + v <= 1.0f && 
             t > 1e-4f;
-
         
         return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri, hit);
     }
@@ -89,28 +112,25 @@ struct Ray {
             return getTriHit(pixelOptimisationReport.coherentTri);
         }
 
-        // store the closest hit so far
-        TriHit closestHit = TriHit(Vec3(), 999999.0f, Vec3(), nullptr, false);
-        bool hitFlag = false;
+        float closestDist = 999999.0f;
+        int closestTriIndex =  -1;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
-            const CoreTri& coreTri = deviceTriBuffer.getCoreTri(i);
+            const CoreTri& tri = deviceTriBuffer.getCoreTri(i);
 
-            const Tri& tri = deviceTriBuffer.getTri(i);
+            float dist = this->getTriHitDist(tri);
 
-            TriHit triHit = this->getTriHit(tri);
-
-            if (triHit.hit) {
-                // we have a hit!
-                if (triHit.dist < closestHit.dist) {
-                    // its the closest one so far!
-                    closestHit = triHit;
-                    hitFlag = true;
-                }
+            if (dist > 0.0f && dist < closestDist) {
+                closestDist = dist;
+                closestTriIndex = i;
             }
         }
         
-        return closestHit;
+        if (closestTriIndex == -1) {
+            return TriHit();
+        } else {
+            return this->getTriHit(deviceTriBuffer.getTri(closestTriIndex));
+        }
     }
 
     __device__ void refractReflect(Vec3& shiftedTriNormal, unsigned int& localSeed, const TriHit& triHit, const DeviceMaterial& material) {
