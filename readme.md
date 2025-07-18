@@ -2,11 +2,11 @@
 ## Overview
 This project is a 3D pathtracer implemented in C++ with hardware acceleration using CUDA.
 
-Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~3664.44x** speed improvement (more details in Performance Evolution section below).
+Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in Performance Evolution section below).
 
 ![alt text](Readme_Images/img1.jpg)
 **Note**: Gamma correction disabled for artistic preference
-- **Render Time**: 6.1 seconds
+- **Render Time**: 4.6 seconds
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 10 triangles
@@ -51,10 +51,10 @@ Release\d.exe
 
 ## Performance Evolution
 - **V1**: Single Threaded CPU (~5 hours)
-- **V2**: CUDA parallel processing (~6.1 seconds)
+- **V2**: CUDA (~4.16 seconds)
 - **V3**: OptiX and OpenGL Mathematics (GLM) (Unknown, future project)
 
-**NOTE:** V1 did have multithreaded through #pragma omp parallel for, however it was harder to benchmark, so single threaded numbers are being used
+**NOTE:** V1 did have multithreaded through #pragma omp parallel for, however it was never benchmarked, so single threaded numbers are being used
 ### Improvement Over V1
 
 In V1 of this project, the following image took `18322.2s` to render.
@@ -64,7 +64,7 @@ In V1 of this project, the following image took `18322.2s` to render.
 - **Scene Complexity**: 30 triangles
 - **Hardware**: Intel Core i9-12900k
 
-Comparing to a render of V2, which took `5.0s` to render
+Comparing to a render of V2, which took `4.16s` to render
 ![alt text](Readme_Images/img3.jpg)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 2,048 rays per pixel
@@ -73,7 +73,7 @@ Comparing to a render of V2, which took `5.0s` to render
 
 **NOTE:** The images are not identical, however they the main differences are simple texture and color. The geometry is identical.
 
-Performance Speedup: `18322.2 / 5.0 =` **3664.44x Speedup**
+Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup**
 
 That means every second spent rendering with V2 is equivelent to an hour of rending with V1
 
