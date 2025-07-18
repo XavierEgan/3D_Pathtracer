@@ -18,6 +18,7 @@
 #include "../Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
 #include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
 #include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
+#include "../Misc/DeviceResourceManager/DevicePerformance.cuh"
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 #include "../Misc/PixelOptimisationReport.cuh"
 
@@ -40,6 +41,12 @@ struct _TriDist {
     __device__ _TriDist(float dist, float u, float v) : dist(dist), u(u), v(v) {}
 };
 
+__device__ void swap(float& a, float& b) {
+    float t = a;
+    a = b;
+    b = t;
+}
+
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const Vec3& edge1, const Vec3& offset) {
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
     Vec3 normal = triNormal;
@@ -58,10 +65,19 @@ __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const
 struct Ray {
     Vec3 direction;
     Vec3 origin;
+    Vec3 invDir;
+    int3 sign;
 
-    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
-    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
-    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {}
+    __device__ void _precomputeStuff() {
+        invDir = 1/direction;
+        sign.x = invDir.x < 0;
+        sign.y = invDir.y < 0;
+        sign.z = invDir.z < 0;
+    }
+
+    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {_precomputeStuff();}
+    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {_precomputeStuff();}
+    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {_precomputeStuff();}
 
     __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera) {
         Vec3 forwardComponent = camera.precomputedForwardComponent;
@@ -70,6 +86,40 @@ struct Ray {
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = camera.pos;
+        _precomputeStuff();
+    }
+
+    __device__ __forceinline__ bool intersectsAABB(const AABB& aabb) const {
+        //https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
+
+        float tmin = (aabb.min.x - origin.x) / direction.x;
+        float tmax = (aabb.max.x - origin.x) / direction.x;
+
+        if (tmin > tmax) swap(tmin, tmax);
+
+        float tymin = (aabb.min.y - origin.y) / direction.y;
+        float tymax = (aabb.max.y - origin.y) / direction.y;
+
+        if (tymin > tymax) swap(tymin, tymax);
+
+        if ((tmin > tymax) || (tymin > tmax))
+            return false;
+
+        if (tymin > tmin) tmin = tymin;
+        if (tymax < tmax) tmax = tymax;
+
+        float tzmin = (aabb.min.z - origin.z) / direction.z;
+        float tzmax = (aabb.max.z - origin.z) / direction.z;
+
+        if (tzmin > tzmax) swap(tzmin, tzmax); 
+
+        if ((tmin > tzmax) || (tzmin > tmax)) 
+            return false; 
+
+        if (tzmin > tmin) tmin = tzmin; 
+        if (tzmax < tmax) tmax = tzmax; 
+
+        return true;
     }
 
     __device__ __forceinline__ _TriDist getTriHitDist(const CoreTri& tri) const {
@@ -120,8 +170,18 @@ struct Ray {
         return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri, hit);
     }
 
-    __device__ TriHit getTriIntersection(const DeviceTriBuffer& deviceTriBuffer, const PixelOptimisationReport& pixelOptimisationReport, bool cameraRay) const {
+    __device__ TriHit getTriIntersection(
+        const DeviceTriBuffer& deviceTriBuffer, 
+        const PixelOptimisationReport& pixelOptimisationReport, 
+        bool cameraRay
+        #ifdef REPORT_PERFORMANCE
+        , DevicePerformance& devicePerformance
+        #endif
+    ) const {
         if (cameraRay && pixelOptimisationReport.isCoherentPixel) {
+            #ifdef REPORT_PERFORMANCE
+            devicePerformance.incrimentRayTriIntersecs();
+            #endif
             return getTriHit(pixelOptimisationReport.coherentTri);
         }
 
@@ -129,9 +189,18 @@ struct Ray {
         int closestTriIndex =  -1;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
+            const AABB& aabb = deviceTriBuffer.getAABB(i);
+
+            if (!intersectsAABB(aabb)) {
+                continue;
+            }
+
             const CoreTri& tri = deviceTriBuffer.getCoreTri(i);
 
             _TriDist dist = this->getTriHitDist(tri);
+            #ifdef REPORT_PERFORMANCE
+            devicePerformance.incrimentRayTriIntersecs();
+            #endif
 
             if (dist.dist > 0.0f && dist.dist < closestDist.dist) {
                 closestDist = dist;
@@ -160,27 +229,26 @@ struct Ray {
             - https://www.cse.chalmers.se/edu/year/2013/course/TDA361/refractionvector.pdf
         */
         float ni, nr;
-        Vec3 refractionNormal;
         bool facingFront = direction.dot(shiftedTriNormal) < 0;
 
         ni = facingFront ? 1.0f : material.IOR;
         nr = facingFront ? material.IOR : 1.0f;
 
-        shiftedTriNormal *= 1 - (2 * !facingFront);
+        shiftedTriNormal *= facingFront ? 1 : -1;
 
         // remembering that a.b = |a||b|*cos(theta)
-        float cosThetaI = -refractionNormal.dot(direction); // |normal| = 1 and |incident| = 1
+        float cosThetaI = -shiftedTriNormal.dot(direction); // |normal| = 1 and |incident| = 1
 
         float n = ni/nr;
         float discriminant = 1 - n * n * (1 - cosThetaI * cosThetaI);
 
         if (discriminant < 1e-4f) {
             // TIR
-            direction= (direction - 2 * refractionNormal.dot(direction) * refractionNormal).normalized();
+            direction = (direction - 2 * shiftedTriNormal.dot(direction) * shiftedTriNormal).normalized();
             
         } else {
             // refraction
-            direction = (n * direction + ((n * cosThetaI) - sqrtf(discriminant)) * refractionNormal).normalized();
+            direction = (n * direction + ((n * cosThetaI) - sqrtf(discriminant)) * shiftedTriNormal).normalized();
         }
     }
 
@@ -214,14 +282,6 @@ struct Ray {
     }
 
     __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
-        float u1 = randUniform(localSeed);
-        float u2 = randUniform(localSeed);
-
-        bool refract = u1 < material.transmission;
-        bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
-
-        int type = refract ? 0 : diffuse ? 2 : 1;
-
         Vec3 UV = triHit.tri->getUV(triHit.baryCoords);
 
         Vec3 edge1 = (triHit.tri->coreTri.v1 - triHit.tri->coreTri.v0).normalized();
@@ -229,6 +289,16 @@ struct Ray {
         Vec3 shiftedTriNormal = getNormalFromOffset(triHit.tri->normal, edge1, normalOffset);
         
         runningAlbedo *= material.getAlbedo(UV.x, UV.y);
+
+        float u1 = randUniform(localSeed);
+        float u2 = randUniform(localSeed);
+
+        bool refract = u1 < material.transmission;
+        bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
+
+        bool facingBack = direction.dot(shiftedTriNormal) > 0;
+
+        int type = refract || facingBack ? 0 : diffuse ? 2 : 1; // if we are facing the back, then assume we are inside a material refracting out
 
         switch (type) {
             case 0:

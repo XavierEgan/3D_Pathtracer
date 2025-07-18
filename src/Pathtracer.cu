@@ -37,6 +37,9 @@ struct Pathtracer {
         DeviceScreenBuffer deviceScreenBuffer = DeviceScreenBuffer(camera.screenParams);
         DeviceMaterialManager deviceMaterialManager = DeviceMaterialManager(hostResourceManager.hostMaterialManager);
         DeviceTriBuffer deviceTriBuffer = DeviceTriBuffer(hostResourceManager.hostMeshManager);
+        #ifdef REPORT_PERFORMANCE
+            DevicePerformance devicePerformance = DevicePerformance(camera.screenParams);
+        #endif
 
         DeviceScreenBuffer* deviceScreenBufferPointer;
         DeviceMaterialManager* deviceMaterialManagerPointer;
@@ -58,9 +61,19 @@ struct Pathtracer {
             }
         }
 
+        printf("- **Resolution**: %dx%d\n- **Samples**: %d rays per pixel\n- **Scene Complexity**: %d triangles\n- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)\n", camera.screenParams.width, camera.screenParams.height, camera.screenParams.rayPerPixel, deviceTriBuffer.getNumTris());
+
         auto start = std::chrono::high_resolution_clock::now();
 
-        getPixelColorKernal<<<gridSize, blockSize>>>(deviceMaterialManagerPointer, deviceTriBufferPointer, deviceScreenBufferPointer, camera);
+        getPixelColorKernal<<<gridSize, blockSize>>>(
+            deviceMaterialManagerPointer, 
+            deviceTriBufferPointer, 
+            deviceScreenBufferPointer, 
+            camera
+        #ifdef REPORT_PERFORMANCE
+            , devicePerformance
+        #endif
+        );
         cudaError_t err = cudaGetLastError();
         if (err != cudaSuccess) {
             printf("Kernel launch failed: %s\n", cudaGetErrorString(err));
@@ -78,6 +91,10 @@ struct Pathtracer {
         }
 
         deviceScreenBuffer.writeImage(outFile);
+
+        #ifdef REPORT_PERFORMANCE
+        devicePerformance.printReport();
+        #endif
     }
 };
 
@@ -99,12 +116,12 @@ int main(void) {
     trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
     brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    const unsigned int width = 2048;//4096
-    const unsigned int height = 2048;
+    const unsigned int width = 2048/4;//4096
+    const unsigned int height = 2048/4;
     const float verticalFov = 90 * (3.1415f/180);
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 64;
+    const unsigned int rayPerPixel = 128 * 4;
     const unsigned int maxBounces = 32;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
@@ -126,12 +143,12 @@ int main(void) {
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
     HostMaterial rightWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID rightWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(rightWallMaterial);
 
@@ -146,7 +163,7 @@ int main(void) {
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
     HostMaterial randMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        1.0f, 1.5f, 0.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
 
@@ -155,7 +172,7 @@ int main(void) {
     HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
 
-    HostMesh backWallMesh = HostMesh::plane(brb, blb, tlb, trb, backWallMaterialID);
+    HostMesh backWallMesh = HostMesh::plane(blb, brb, trb, tlb, backWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
 
     HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
@@ -169,8 +186,16 @@ int main(void) {
 
     unsigned int seed = 0;
 
-    HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(randMesh);
+    HostMesh causticSphere = HostMesh::causticSphere(0.5f, Vec3(0, 0, 0), randMaterialID, 1.0f, 256, 128);
+    hostResourceManager.hostMeshManager.registerMesh(causticSphere);
+
+    // HostMesh icosahedron1 = HostMesh::icosahedron(0.5f, Vec3(0, 0, -.5), randMaterialID);
+    // hostResourceManager.hostMeshManager.registerMesh(icosahedron1);
+    // HostMesh icosahedron2 = HostMesh::icosahedron(0.5f, Vec3(0, 0, .5), randMaterialID);
+    // hostResourceManager.hostMeshManager.registerMesh(icosahedron2);
+
+    // HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
+    // hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
     pathtracer.render((char*)"test.jpg");

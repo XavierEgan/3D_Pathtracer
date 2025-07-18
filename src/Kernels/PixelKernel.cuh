@@ -3,10 +3,20 @@
 #include "../Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
 #include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
 #include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
+#include "../Misc/DeviceResourceManager/DevicePerformance.cuh"
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 #include "../Misc/PixelOptimisationReport.cuh"
 
-__device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer& deviceTriBuffer, const Camera& camera, unsigned int planeX, unsigned int planeY, unsigned int& seed) {
+__device__ PixelOptimisationReport pixelOptimisationsCheck(
+    const DeviceTriBuffer& deviceTriBuffer, 
+    const Camera& camera, 
+    unsigned int planeX, 
+    unsigned int planeY, 
+    unsigned int& seed
+    #ifdef REPORT_PERFORMANCE
+    , DevicePerformance devicePerformance
+    #endif
+) {
     float subPixelOffsetX, subPixelOffsetY;
     int missedRayCount = 0;
 
@@ -25,7 +35,14 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
             subPixelOffsetY = y * .5;
             Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera);
 
-            triHit = ray.getTriIntersection(deviceTriBuffer, dummyReport, false);
+            triHit = ray.getTriIntersection(
+                deviceTriBuffer, 
+                dummyReport, 
+                false
+                #ifdef REPORT_PERFORMANCE
+                , devicePerformance
+                #endif
+            );
 
             if (x==0 && y==0) {
                 if (triHit.hit) {
@@ -50,7 +67,15 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(const DeviceTriBuffer
     );
 }
 
-__global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManagerPointer, DeviceTriBuffer* deviceTriBufferPointer, DeviceScreenBuffer* deviceScreenBufferPointer,  Camera camera) {
+__global__ void getPixelColorKernal(
+    DeviceMaterialManager* deviceMaterialManagerPointer, 
+    DeviceTriBuffer* deviceTriBufferPointer, 
+    DeviceScreenBuffer* deviceScreenBufferPointer,
+    Camera camera
+    #ifdef REPORT_PERFORMANCE
+    , DevicePerformance devicePerformance
+    #endif
+) {
     const DeviceMaterialManager& deviceMaterialManager = *deviceMaterialManagerPointer;
     const DeviceTriBuffer& deviceTriBuffer = *deviceTriBufferPointer;
     DeviceScreenBuffer& deviceScreenBuffer = *deviceScreenBufferPointer;
@@ -63,10 +88,23 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         printf("early return, %d, %d\n", x, y);
         return;
     }
+
+    #ifdef REPORT_PERFORMANCE
+        devicePerformance.setXY(x, y);
+    #endif
     
     unsigned int seed = 12345 * x * y;
 
-    PixelOptimisationReport pixelOptimisationReport = pixelOptimisationsCheck(deviceTriBuffer, camera, x, y, seed);
+    PixelOptimisationReport pixelOptimisationReport = pixelOptimisationsCheck(
+        deviceTriBuffer, 
+        camera, 
+        x, 
+        y, 
+        seed
+        #ifdef REPORT_PERFORMANCE
+        , devicePerformance
+        #endif
+    );
 
     if (pixelOptimisationReport.isBlankPixel) {
         deviceScreenBuffer.write(Vec3(), x, y);
@@ -87,7 +125,14 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
         for (size_t i = 0; i < camera.screenParams.maxBounces; i++) {
             // check if the ray hits any triangles
             bool cameraRay = i == 0;
-            TriHit triHit = activeRay.getTriIntersection(deviceTriBuffer, pixelOptimisationReport, cameraRay);
+            TriHit triHit = activeRay.getTriIntersection(
+                deviceTriBuffer, 
+                pixelOptimisationReport, 
+                cameraRay
+                #ifdef REPORT_PERFORMANCE
+                , devicePerformance
+                #endif
+            );
 
             if (!triHit.hit) {
                 // we didnt hit anything which means we are done
@@ -111,6 +156,10 @@ __global__ void getPixelColorKernal(DeviceMaterialManager* deviceMaterialManager
             
             numBounces++;
         }
+
+        #ifdef REPORT_PERFORMANCE
+        devicePerformance.incrimentRayTraces();
+        #endif
 
         Vec3 finalColor = runningAlbedo * lightSource;
         runningPixelColor += finalColor;

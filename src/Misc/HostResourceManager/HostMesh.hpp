@@ -37,8 +37,165 @@ public:
         return HostMesh(randomMeshTris);
     }
 
+    static HostMesh cube(float size, Vec3 pos, MaterialID matId) {
+        Vec3 
+        tlf, blf,
+        tlb, blb,
+        trf, brf,
+        trb, brb;
+        tlf = Vec3(-1.0f, 1.0f, -1.0f) * size + pos; // top left front corner
+        blf = Vec3(-1.0f, -1.0f, -1.0f) * size + pos; // bottom left front corner
+
+        tlb = Vec3(1.0f, 1.0f, -1.0f) * size + pos; // top left back corner
+        blb = Vec3(1.0f, -1.0f, -1.0f) * size + pos; // bottom left back corner
+
+        trf = Vec3(-1.0f, 1.0f, 1.0f) * size + pos; // top right front corner
+        brf = Vec3(-1.0f, -1.0f, 1.0f) * size + pos; // bottom right front corner
+
+        trb = Vec3(1.0f, 1.0f, 1.0f) * size + pos; // top right back corner
+        brb = Vec3(1.0f, -1.0f, 1.0f) * size + pos; // bottom right back corner
+
+        HostMesh mesh = HostMesh();
+
+        // Front face (z = -size)
+        mesh.addTri(tlf, blf, trf, matId);
+        mesh.addTri(trf, blf, brf, matId);
+
+        // Right face (x = -size)
+        mesh.addTri(trf, brf, tlf, matId);
+        mesh.addTri(tlf, brf, blf, matId);
+
+        // Back face (z = +size)
+        mesh.addTri(trb, brb, tlb, matId);
+        mesh.addTri(tlb, brb, blb, matId);
+
+        // Left face (x = +size)
+        mesh.addTri(tlb, blb, trb, matId);
+        mesh.addTri(trb, blb, brb, matId);
+
+        // Top face (y = +size)
+        mesh.addTri(tlf, trf, tlb, matId);
+        mesh.addTri(tlb, trf, trb, matId);
+
+        // Bottom face (y = -size)
+        mesh.addTri(blf, blb, brf, matId);
+        mesh.addTri(brf, blb, brb, matId);
+
+        return mesh;
+    }
+
+    static HostMesh icosahedron(float size, Vec3 pos, MaterialID matId) {
+        const float phi = (1.0f + sqrt(5.0f)) * 0.5f; // the golden ratio
+
+        // normalized vertices (unit sphere before scaling)
+        Vec3 verts[12] = {
+            Vec3(-1,  phi,  0),
+            Vec3( 1,  phi,  0),
+            Vec3(-1, -phi,  0),
+            Vec3( 1, -phi,  0),
+
+            Vec3( 0, -1,  phi),
+            Vec3( 0,  1,  phi),
+            Vec3( 0, -1, -phi),
+            Vec3( 0,  1, -phi),
+
+            Vec3( phi,  0, -1),
+            Vec3( phi,  0,  1),
+            Vec3(-phi,  0, -1),
+            Vec3(-phi,  0,  1)
+        };
+
+        // scale and translate
+        for (int i = 0; i < 12; ++i) {
+            verts[i] = verts[i].normalized() * size + pos;
+        }
+
+        // faces (vertex indices)
+        int faces[20][3] = {
+            {0, 11, 5},
+            {0, 5, 1},
+            {0, 1, 7},
+            {0, 7, 10},
+            {0, 10, 11},
+
+            {1, 5, 9},
+            {5, 11, 4},
+            {11, 10, 2},
+            {10, 7, 6},
+            {7, 1, 8},
+
+            {3, 9, 4},
+            {3, 4, 2},
+            {3, 2, 6},
+            {3, 6, 8},
+            {3, 8, 9},
+
+            {4, 9, 5},
+            {2, 4, 11},
+            {6, 2, 10},
+            {8, 6, 7},
+            {9, 8, 1}
+        };
+
+        HostMesh mesh = HostMesh();
+        for (int i = 0; i < 20; ++i) {
+            mesh.addTri(verts[faces[i][0]], verts[faces[i][1]], verts[faces[i][2]], matId);
+        }
+
+        return mesh;
+    }
+
+
     std::vector<Tri> getTris() const {
         return tris;
+    }
+
+    static HostMesh causticSphere(
+        float radius, Vec3 pos, MaterialID matId,
+        float zSquish,
+        int slices = 64, int stacks = 32, // you can go higher, e.g. 128/64 for ultra fine
+        float waveAmp = 0.08f, float waveFreq = 10.0f)
+    {
+        HostMesh mesh;
+
+        // Precompute vertex positions
+        std::vector<std::vector<Vec3>> verts(stacks + 1);
+        for (int i = 0; i <= stacks; ++i) {
+            float v = float(i) / stacks;
+            float theta = v * 3.14159;  // 0 to pi (latitude)
+
+            verts[i].resize(slices + 1);
+            for (int j = 0; j <= slices; ++j) {
+                float u = float(j) / slices;
+                float phi = u * 2.0f * 3.14159; // 0 to 2pi (longitude)
+
+                // Spherical coordinates
+                float x = sinf(theta) * cosf(phi);
+                float y = cosf(theta);
+                float z = sinf(theta) * sinf(phi);
+
+                // Add a wave distortion to radius (for caustic refraction)
+                float r = radius * (1.0f + waveAmp * sinf(waveFreq * theta + waveFreq * phi));
+
+                Vec3 p = Vec3(x, y, z * zSquish) * r + pos;
+                verts[i][j] = p;
+            }
+        }
+
+        // Generate triangles (anticlockwise order for outside view)
+        for (int i = 0; i < stacks; ++i) {
+            for (int j = 0; j < slices; ++j) {
+                Vec3 v1 = verts[i][j];
+                Vec3 v2 = verts[i+1][j];
+                Vec3 v3 = verts[i+1][j+1];
+                Vec3 v4 = verts[i][j+1];
+
+                mesh.addTri(v1, v2, v3, matId); // lower triangle
+                mesh.addTri(v1, v3, v4, matId); // upper triangle
+            }
+        }
+
+        return mesh;
     }
 
     Tri* getTrisPointer() {
