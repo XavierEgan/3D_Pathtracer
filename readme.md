@@ -257,7 +257,8 @@ Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
 
 ### Split `CoreTri` into 9 float arrays (Failed speedup)
-The idea for this improvement was that more data can be fetched into the cache, since we read 9 floats and then pull 9 whole cache lines in. However this does not improve performance 
+The idea for this improvement was that more data can be fetched into the cache, since we read 9 floats and then pull 9 whole cache lines in.
+This idea proably would have worked with float3's and making use of CUDA's __ldg() to load them into read only cache which has lower latency.
 ```C++
 class DeviceTriBuffer {
     Tri* tris;
@@ -353,11 +354,27 @@ public:
     }
 ```
 
+### Use only `CoreTri` for intersection checks (1.17x speedup)
+If we modify the intersection loop and add another array to `TriBuffer` of `CoreTri`s, then we can just load `CoreTri`s and intersect with them, only loading the actual `Tri` we need
+```C++
+for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
+    const CoreTri& tri = deviceTriBuffer.getCoreTri(i);
 
+    _TriDist dist = this->getTriHitDist(tri);
+
+    if (dist.dist > 0.0f && dist.dist < closestDist.dist) {
+        closestDist = dist;
+        closestTriIndex = i;
+    }
+}
+```
+16.7
+Final time after optimisation: `16.7s`\
+Thats a `19.47/16.7 =` **1.17x speedup**
 
 
 ## Limitations
-- **No Energy Conservation or Proper Global Illumination:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
+- **No Energy Conservation:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
 - **Simplified BSDF and Sampling:** Reflections are handled with a basic mix of diffuse and specular based on roughness, without advanced features like Fresnel effects, microfacet models, or importance sampling. Paths use a fixed number of bounces without Russian Roulette, which introduces bias and inefficiency.
 
 These choices were made to keep the code manageable as a first-year student project, allowing me to focus on core implementation rather than perfect theory.

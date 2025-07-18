@@ -32,10 +32,23 @@ struct TriHit {
     __host__ __device__ TriHit(const Vec3& intersecPoint, float dist, const Vec3& baryCoords, const Tri* tri, bool hit) : intersecPoint(intersecPoint), dist(dist), baryCoords(baryCoords), tri(tri), hit(hit) {}
 };
 
-__host__ __device__ static Vec3 getNormalFromOffset(const Vec3& normal, const Vec3& edge1, const Vec3& offset) {
+struct _TriDist {
+    float dist;
+    float u;
+    float v;
+    __device__ _TriDist() : dist(999999999.0f) {};
+    __device__ _TriDist(float dist, float u, float v) : dist(dist), u(u), v(v) {}
+};
+
+__host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const Vec3& edge1, const Vec3& offset) {
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
-    Vec3 tangent = edge1;
-    Vec3 bitangent = normal.cross(tangent).normalized();
+    Vec3 normal = triNormal;
+    Vec3 absn = Vec3(fabs(normal.x), fabs(normal.y), fabs(normal.z));
+    Vec3 ref = (absn.x <= absn.y && absn.x <= absn.z) ? Vec3(1,0,0)
+    : (absn.y <= absn.z) ? Vec3(0,1,0)
+    : Vec3(0,0,1);
+    Vec3 tangent = ref.cross(normal);
+    Vec3 bitangent = normal.cross(tangent);
 
     Vec3 localVecWithOffset = Vec3(0,0,1) + offset;
 
@@ -59,13 +72,13 @@ struct Ray {
         origin = camera.pos;
     }
 
-    __device__ float getTriHitDist(const CoreTri& tri) const {
+    __device__ __forceinline__ _TriDist getTriHitDist(const CoreTri& tri) const {
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
         Vec3 rayCrossEdge2 = direction.cross(edge2);
         float det = edge1.dot(rayCrossEdge2);
 
-        float inv_det = 1.0 / det;
+        float inv_det = 1.0f / det;
         Vec3 s = origin - tri.v0;
         float u = inv_det * s.dot(rayCrossEdge2);
 
@@ -79,11 +92,12 @@ struct Ray {
             v >= 0.0f && u + v <= 1.0f && 
             t > 1e-4f;
 
-        return hit ? t : -1.0f;
+        t = hit ? t : -1.0f;
 
+        return _TriDist(t, u, v);
     }
 
-    __device__ TriHit getTriHit(const Tri& tri) const {
+    __device__ __forceinline__ TriHit getTriHit(const Tri& tri) const {
         Vec3 edge1 = tri.coreTri.v1 - tri.coreTri.v0;
         Vec3 edge2 = tri.coreTri.v2 - tri.coreTri.v0;
         Vec3 rayCrossEdge2 = direction.cross(edge2);
@@ -111,15 +125,15 @@ struct Ray {
             return getTriHit(pixelOptimisationReport.coherentTri);
         }
 
-        float closestDist = 999999.0f;
+        _TriDist closestDist = _TriDist();
         int closestTriIndex =  -1;
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
             const CoreTri& tri = deviceTriBuffer.getCoreTri(i);
 
-            float dist = this->getTriHitDist(tri);
+            _TriDist dist = this->getTriHitDist(tri);
 
-            if (dist > 0.0f && dist < closestDist) {
+            if (dist.dist > 0.0f && dist.dist < closestDist.dist) {
                 closestDist = dist;
                 closestTriIndex = i;
             }
@@ -128,7 +142,13 @@ struct Ray {
         if (closestTriIndex == -1) {
             return TriHit();
         } else {
-            return this->getTriHit(deviceTriBuffer.getTri(closestTriIndex));
+            return TriHit(
+                origin + direction * closestDist.dist, 
+                closestDist.dist, 
+                Vec3(closestDist.u, closestDist.v, 1 - closestDist.u - closestDist.v),
+                &deviceTriBuffer.getTri(closestTriIndex),
+                true
+            );
         }
     }
 
@@ -143,8 +163,8 @@ struct Ray {
         Vec3 refractionNormal;
         bool facingFront = direction.dot(shiftedTriNormal) < 0;
 
-        ni = 1.0f * facingFront + material.IOR * !facingFront;
-        nr = 1.0f * !facingFront + material.IOR * facingFront;
+        ni = facingFront ? 1.0f : material.IOR;
+        nr = facingFront ? material.IOR : 1.0f;
 
         shiftedTriNormal *= 1 - (2 * !facingFront);
 
@@ -178,9 +198,13 @@ struct Ray {
         );
 
         // create an orthonormal basis
-        Vec3 arbitrary = shiftedTriNormal + Vec3(.1, .1, .1);
-        Vec3 tangent = shiftedTriNormal.cross(arbitrary).normalized();
-        Vec3 bitangent = shiftedTriNormal.cross(tangent).normalized();
+        Vec3 normal = shiftedTriNormal;
+        Vec3 absn = Vec3(fabs(normal.x), fabs(normal.y), fabs(normal.z));
+        Vec3 ref = (absn.x <= absn.y && absn.x <= absn.z) ? Vec3(1,0,0)
+        : (absn.y <= absn.z) ? Vec3(0,1,0)
+        : Vec3(0,0,1);
+        Vec3 tangent = ref.cross(normal);
+        Vec3 bitangent = normal.cross(tangent);
 
         direction = localRay.x * tangent + localRay.y * bitangent + localRay.z * shiftedTriNormal;
     }
@@ -196,7 +220,7 @@ struct Ray {
         bool refract = u1 < material.transmission;
         bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
 
-        int type = !refract * (diffuse + 1); // get the type in a branchless way
+        int type = refract ? 0 : diffuse ? 2 : 1;
 
         Vec3 UV = triHit.tri->getUV(triHit.baryCoords);
 
