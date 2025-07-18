@@ -1,4 +1,4 @@
-#pragma once
+#define REPORT_PERFORMANCE
 #include <vector>
 #include <array>
 #include <cstdlib>
@@ -116,12 +116,12 @@ int main(void) {
     trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
     brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    const unsigned int width = 2048/4;//4096
-    const unsigned int height = 2048/4;
+    const unsigned int width = 2048/8;//4096
+    const unsigned int height = 2048/8;
     const float verticalFov = 90 * (3.1415f/180);
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 4;
+    const unsigned int rayPerPixel = 128 * 1;
     const unsigned int maxBounces = 32;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
@@ -186,7 +186,7 @@ int main(void) {
 
     unsigned int seed = 0;
 
-    HostMesh causticSphere = HostMesh::causticSphere(0.5f, Vec3(0, 0, 0), randMaterialID, 1.0f, 256, 128);
+    HostMesh causticSphere = HostMesh::causticSphere(0.5f, Vec3(0, 0, .2), randMaterialID, 1.0f, 128, 64);
     hostResourceManager.hostMeshManager.registerMesh(causticSphere);
 
     // HostMesh icosahedron1 = HostMesh::icosahedron(0.5f, Vec3(0, 0, -.5), randMaterialID);
@@ -198,6 +198,7 @@ int main(void) {
     // hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
+
     pathtracer.render((char*)"test.jpg");
 
     return 0;

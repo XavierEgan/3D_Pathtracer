@@ -65,19 +65,10 @@ __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const
 struct Ray {
     Vec3 direction;
     Vec3 origin;
-    Vec3 invDir;
-    int3 sign;
 
-    __device__ void _precomputeStuff() {
-        invDir = 1/direction;
-        sign.x = invDir.x < 0;
-        sign.y = invDir.y < 0;
-        sign.z = invDir.z < 0;
-    }
-
-    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {_precomputeStuff();}
-    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {_precomputeStuff();}
-    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {_precomputeStuff();}
+    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
+    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
+    __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {}
 
     __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera) {
         Vec3 forwardComponent = camera.precomputedForwardComponent;
@@ -86,7 +77,6 @@ struct Ray {
 
         direction = (forwardComponent + upComponent + rightComponent).normalized();
         origin = camera.pos;
-        _precomputeStuff();
     }
 
     __device__ __forceinline__ bool intersectsAABB(const AABB& aabb) const {
@@ -190,6 +180,10 @@ struct Ray {
 
         for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
             const AABB& aabb = deviceTriBuffer.getAABB(i);
+
+            #ifdef REPORT_PERFORMANCE
+            devicePerformance.incrimentAABBIntersecs();
+            #endif
 
             if (!intersectsAABB(aabb)) {
                 continue;

@@ -4,15 +4,29 @@ This project is a 3D pathtracer implemented in C++ with hardware acceleration us
 
 Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in Performance Evolution section below).
 
+![alt text](Readme_Images/img5.jpg)
+- **Render Time**: 446.39 seconds
+- **Resolution**: 512x512
+- **Samples**: 8,192 rays per pixel
+- **Scene Complexity**: 16394 triangles
+- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
+- **AABB Intersections**: ~69.1 trillion
+- **Ray-Tri Intersections**: ~36.6 billion
+- **Throughput**: 154.8 billion AABB Intersection Tests per second
+
+Thats more than one AABB intersection test for every human that has ever lived per second!
+
+**NOTE:**intersectsion were calculated by rendering scene with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
+
 ![alt text](Readme_Images/img1.jpg)
 **Note**: Gamma correction disabled for artistic preference
 - **Render Time**: 4.6 seconds
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 10 triangles
-- **Ray Intersections**: ~2.7 trillion operations
+- **Ray Intersections**: 
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
-- **Throughput**: ~205 billion rays/second
+- **Throughput**: 
 
 ## Quick Start
 Step 1:\
