@@ -70,7 +70,7 @@ struct Vec3 {
     }
     template<typename T, typename V>
     __host__ __device__ friend typename std::enable_if<std::is_arithmetic<T>::value && std::is_same<V, Vec3>::value, Vec3>::type operator-(const T other, const V& vec) {
-        return Vec3(vec.x - other, vec.y - other, vec.z - other);
+        return Vec3(other - vec.x, other - vec.y, other - vec.z);
     }
     __host__ __device__ Vec3 operator-() const {
         return Vec3(-x, -y, -z);
@@ -123,7 +123,7 @@ struct Vec3 {
     }
     template<typename T, typename V>
     __host__ __device__ friend typename std::enable_if<std::is_arithmetic<T>::value && std::is_same<V, Vec3>::value, Vec3>::type operator/(const T other, const V& vec) {
-        return Vec3(vec.x / other, vec.y / other, vec.z / other);
+        return Vec3(other / vec.x , other / vec.y , other/ vec.z);
     }
 
     // comparison overrites
@@ -209,6 +209,14 @@ struct Vec3 {
         this->y *= invLen;
         this->z *= invLen;
         return *this;
+    }
+
+    __host__ __device__ friend Vec3 min(Vec3& t, Vec3& o) {
+        return Vec3(fminf(t.x, o.x), fminf(t.y, o.y), fminf(t.z, o.z));
+    }
+
+    __host__ __device__ friend Vec3 max(Vec3& t, Vec3& o) {
+        return Vec3(fmaxf(t.x, o.x), fmaxf(t.y, o.y), fmaxf(t.z, o.z));
     }
 
     __host__ __device__ Vec3 normalized() const {

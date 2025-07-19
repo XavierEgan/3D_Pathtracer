@@ -14,8 +14,8 @@
 struct AABB {
     Vec3 min;
     Vec3 max;
-    AABB() {}
-    AABB(Vec3 min, Vec3 max) : min(min), max(max) {}
+    __host__ __device__ AABB() {}
+    __host__ __device__ AABB(Vec3 min, Vec3 max) : min(min), max(max) {}
 };
 
 struct CoreTri {

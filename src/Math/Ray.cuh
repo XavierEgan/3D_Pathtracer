@@ -41,7 +41,7 @@ struct _TriDist {
     __device__ _TriDist(float dist, float u, float v) : dist(dist), u(u), v(v) {}
 };
 
-__device__ void swap(float& a, float& b) {
+__device__ __forceinline__ void swap(float& a, float& b) {
     float t = a;
     a = b;
     b = t;
@@ -62,57 +62,43 @@ __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const
     return localVecWithOffset.x * tangent + localVecWithOffset.y * bitangent + localVecWithOffset.z * normal;
 }
 
-struct Ray {
+class Ray {
     Vec3 direction;
     Vec3 origin;
 
-    __device__ Ray(Vec3 direction, Vec3 origin) : direction(direction), origin(origin) {}
-    __device__ Ray(Vec3 direction) : direction(direction), origin(Vec3()) {}
+public:
+    __device__ Ray(Vec3 direction, Vec3 origin) : origin(origin) {setDirection(direction);}
+    __device__ Ray(Vec3 direction) : origin(Vec3()) {setDirection(direction);}
     __device__ Ray(int planeX, int planeY, const Camera& camera, unsigned int& seed) : Ray(planeX, planeY, randUniform(seed), randUniform(seed), camera) {}
-
     __device__ Ray(int planeX, int planeY, float subPixelOffsetX, float subPixelOffsetY, const Camera& camera) {
         Vec3 forwardComponent = camera.precomputedForwardComponent;
         Vec3 upComponent = camera.up * ((camera.screenParams.heightOnTwo - planeY) + subPixelOffsetY) * camera.screenParams.pxHeight;
         Vec3 rightComponent = camera.right * ((planeX - camera.screenParams.widthOnTwo) + subPixelOffsetX) * camera.screenParams.pxWidth;
 
-        direction = (forwardComponent + upComponent + rightComponent).normalized();
+        setDirection((forwardComponent + upComponent + rightComponent).normalized());
         origin = camera.pos;
     }
 
-    __device__ __forceinline__ bool intersectsAABB(const AABB& aabb) const {
-        //https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
-
-        float tmin = (aabb.min.x - origin.x) / direction.x;
-        float tmax = (aabb.max.x - origin.x) / direction.x;
-
-        if (tmin > tmax) swap(tmin, tmax);
-
-        float tymin = (aabb.min.y - origin.y) / direction.y;
-        float tymax = (aabb.max.y - origin.y) / direction.y;
-
-        if (tymin > tymax) swap(tymin, tymax);
-
-        if ((tmin > tymax) || (tymin > tmax))
-            return false;
-
-        if (tymin > tmin) tmin = tymin;
-        if (tymax < tmax) tmax = tymax;
-
-        float tzmin = (aabb.min.z - origin.z) / direction.z;
-        float tzmax = (aabb.max.z - origin.z) / direction.z;
-
-        if (tzmin > tzmax) swap(tzmin, tzmax); 
-
-        if ((tmin > tzmax) || (tzmin > tmax)) 
-            return false; 
-
-        if (tzmin > tmin) tmin = tzmin; 
-        if (tzmax < tmax) tmax = tzmax; 
-
-        return true;
+    __device__ __forceinline__ void setDirection(Vec3 dir) {
+        direction = dir;
     }
 
-    __device__ __forceinline__ _TriDist getTriHitDist(const CoreTri& tri) const {
+    __device__ __forceinline__ bool intersectsAABB(const AABB& aabb, float closestIntercept) const {
+        //https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
+        Vec3 invDir = 1.0f/direction;
+        Vec3 t1 = (aabb.min - origin) * invDir;
+        Vec3 t2 = (aabb.max - origin) * invDir;
+
+        Vec3 tmin_vec = min(t1, t2);
+        Vec3 tmax_vec = max(t1, t2);
+
+        float tmin = max(max(tmin_vec.x, tmin_vec.y), tmin_vec.z);
+        float tmax = min(min(tmax_vec.x, tmax_vec.y), tmax_vec.z);
+
+        return tmin <= tmax && (tmin <= closestIntercept);
+    }
+
+    __device__ __forceinline__ bool getTriHit(const CoreTri& tri, _TriDist& triDist) const {
         Vec3 edge1 = tri.v1 - tri.v0;
         Vec3 edge2 = tri.v2 - tri.v0;
         Vec3 rayCrossEdge2 = direction.cross(edge2);
@@ -127,40 +113,19 @@ struct Ray {
 
         float t = inv_det * edge2.dot(sCrossEdge1);
 
-        bool hit = !(det > -1e-4f && det < 1e-4f) && 
-            u >= 0.0f && u <= 1.0f && 
-            v >= 0.0f && u + v <= 1.0f && 
-            t > 1e-4f;
-
-        t = hit ? t : -1.0f;
-
-        return _TriDist(t, u, v);
-    }
-
-    __device__ __forceinline__ TriHit getTriHit(const Tri& tri) const {
-        Vec3 edge1 = tri.coreTri.v1 - tri.coreTri.v0;
-        Vec3 edge2 = tri.coreTri.v2 - tri.coreTri.v0;
-        Vec3 rayCrossEdge2 = direction.cross(edge2);
-        float det = edge1.dot(rayCrossEdge2);
-
-        float inv_det = 1.0 / det;
-        Vec3 s = origin - tri.coreTri.v0;
-        float u = inv_det * s.dot(rayCrossEdge2);
-
-        Vec3 sCrossEdge1 = s.cross(edge1);
-        float v = inv_det * direction.dot(sCrossEdge1);
-
-        float t = inv_det * edge2.dot(sCrossEdge1);
+        triDist.dist = t;
+        triDist.u = u;
+        triDist.v = v;
 
         bool hit = !(det > -1e-4f && det < 1e-4f) && 
             u >= 0.0f && u <= 1.0f && 
             v >= 0.0f && u + v <= 1.0f && 
             t > 1e-4f;
-        
-        return TriHit(origin + direction * t, t, Vec3(u, v, 1 - u - v), &tri, hit);
+
+        return hit;
     }
 
-    __device__ TriHit getTriIntersection(
+    __device__ __forceinline__ TriHit getTriIntersection(
         const DeviceTriBuffer& deviceTriBuffer, 
         const PixelOptimisationReport& pixelOptimisationReport, 
         bool cameraRay
@@ -172,7 +137,17 @@ struct Ray {
             #ifdef REPORT_PERFORMANCE
             devicePerformance.incrimentRayTriIntersecs();
             #endif
-            return getTriHit(pixelOptimisationReport.coherentTri);
+            _TriDist closestDist = _TriDist();
+
+            getTriHit(pixelOptimisationReport.coherentTri.coreTri, closestDist);
+
+            return TriHit(
+                origin + direction * closestDist.dist, 
+                closestDist.dist, 
+                Vec3(closestDist.u, closestDist.v, 1 - closestDist.u - closestDist.v),
+                &pixelOptimisationReport.coherentTri,
+                true
+            );
         }
 
         _TriDist closestDist = _TriDist();
@@ -185,18 +160,19 @@ struct Ray {
             devicePerformance.incrimentAABBIntersecs();
             #endif
 
-            if (!intersectsAABB(aabb)) {
+            if (!intersectsAABB(aabb, closestDist.dist)) {
                 continue;
             }
 
             const CoreTri& tri = deviceTriBuffer.getCoreTri(i);
 
-            _TriDist dist = this->getTriHitDist(tri);
+            _TriDist dist;
+            
             #ifdef REPORT_PERFORMANCE
             devicePerformance.incrimentRayTriIntersecs();
             #endif
 
-            if (dist.dist > 0.0f && dist.dist < closestDist.dist) {
+            if (this->getTriHit(tri, dist) && dist.dist < closestDist.dist) {
                 closestDist = dist;
                 closestTriIndex = i;
             }
@@ -238,11 +214,11 @@ struct Ray {
 
         if (discriminant < 1e-4f) {
             // TIR
-            direction = (direction - 2 * shiftedTriNormal.dot(direction) * shiftedTriNormal).normalized();
+            setDirection((direction - 2 * shiftedTriNormal.dot(direction) * shiftedTriNormal).normalized());
             
         } else {
             // refraction
-            direction = (n * direction + ((n * cosThetaI) - sqrtf(discriminant)) * shiftedTriNormal).normalized();
+            setDirection((n * direction + ((n * cosThetaI) - sqrtf(discriminant)) * shiftedTriNormal).normalized());
         }
     }
 
@@ -268,11 +244,11 @@ struct Ray {
         Vec3 tangent = ref.cross(normal);
         Vec3 bitangent = normal.cross(tangent);
 
-        direction = localRay.x * tangent + localRay.y * bitangent + localRay.z * shiftedTriNormal;
+        setDirection(localRay.x * tangent + localRay.y * bitangent + localRay.z * shiftedTriNormal);
     }
 
     __device__ void mirrorReflect(Vec3& shiftedTriNormal) {
-        direction = (direction - 2*(direction.dot(shiftedTriNormal))*shiftedTriNormal).normalized();
+        setDirection((direction - 2*(direction.dot(shiftedTriNormal))*shiftedTriNormal).normalized());
     }
 
     __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {

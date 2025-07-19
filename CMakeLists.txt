@@ -32,8 +32,7 @@ find_package(CUDAToolkit REQUIRED)
 
 add_executable(
     d
-    #src/main.cpp
-    src/Pathtracer.cu
+    src/main.cu
 )
 
 set_property(TARGET d PROPERTY CUDA_SEPARABLE_COMPILATION ON)
@@ -50,6 +49,7 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Misc
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Ext
         ${CMAKE_CURRENT_SOURCE_DIR}/src/Kernels
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/Scenes
 )
 
 target_link_libraries(d CUDA::cudart)

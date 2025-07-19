@@ -3,6 +3,8 @@
 #include <vector>
 #include "../../Math/Tri.cuh"
 
+#include "MeshStuff/teapot.hpp"
+
 class HostMesh {
     std::vector<Tri> tris;
 
@@ -85,9 +87,9 @@ public:
     }
 
     static HostMesh icosahedron(float size, Vec3 pos, MaterialID matId) {
+        //https://blog.lslabs.dev/posts/generating_icosphere_with_code
         const float phi = (1.0f + sqrt(5.0f)) * 0.5f; // the golden ratio
 
-        // normalized vertices (unit sphere before scaling)
         Vec3 verts[12] = {
             Vec3(-1,  phi,  0),
             Vec3( 1,  phi,  0),
@@ -105,12 +107,10 @@ public:
             Vec3(-phi,  0,  1)
         };
 
-        // scale and translate
         for (int i = 0; i < 12; ++i) {
             verts[i] = verts[i].normalized() * size + pos;
         }
 
-        // faces (vertex indices)
         int faces[20][3] = {
             {0, 11, 5},
             {0, 5, 1},
@@ -153,7 +153,7 @@ public:
     static HostMesh causticSphere(
         float radius, Vec3 pos, MaterialID matId,
         float zSquish,
-        int slices = 64, int stacks = 32, // you can go higher, e.g. 128/64 for ultra fine
+        int slices = 64, int stacks = 32,
         float waveAmp = 0.08f, float waveFreq = 10.0f)
     {
         HostMesh mesh;
@@ -167,14 +167,12 @@ public:
             verts[i].resize(slices + 1);
             for (int j = 0; j <= slices; ++j) {
                 float u = float(j) / slices;
-                float phi = u * 2.0f * 3.14159; // 0 to 2pi (longitude)
+                float phi = u * 2.0f * 3.14159;
 
-                // Spherical coordinates
                 float x = sinf(theta) * cosf(phi);
                 float y = cosf(theta);
                 float z = sinf(theta) * sinf(phi);
 
-                // Add a wave distortion to radius (for caustic refraction)
                 float r = radius * (1.0f + waveAmp * sinf(waveFreq * theta + waveFreq * phi));
 
                 Vec3 p = Vec3(x, y, z * zSquish) * r + pos;
@@ -195,6 +193,25 @@ public:
             }
         }
 
+        return mesh;
+    }
+
+    static HostMesh utahTeapot(Vec3 pos, float scale, MaterialID matId) {
+        HostMesh mesh = HostMesh();
+        for (int i=0; i < teapot_count; i+=9) {
+            mesh.addTri(
+                Vec3(
+                    teapot[i + 2], -teapot[i + 1], -teapot[i + 0]
+                ) * scale + pos,
+                Vec3(
+                    teapot[i + 5], -teapot[i + 4], -teapot[i + 3]
+                ) * scale + pos,
+                Vec3(
+                    teapot[i + 8], -teapot[i + 7], -teapot[i + 6]
+                ) * scale + pos,
+                matId
+            );
+        }
         return mesh;
     }
 

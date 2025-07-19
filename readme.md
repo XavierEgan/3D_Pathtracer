@@ -18,6 +18,8 @@ Thats more than one AABB intersection test for every human that has ever lived p
 
 **NOTE:**intersectsion were calculated by rendering scene with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
 
+![alt text](Readme_Images/img6.jpg)
+
 ![alt text](Readme_Images/img1.jpg)
 **Note**: Gamma correction disabled for artistic preference
 - **Render Time**: 4.6 seconds
@@ -106,7 +108,7 @@ We will be Benchmarking with this image:
 
 **Starting Render Time:** 45.6s
 
-**NOTE:** Timings have quite a large variance of up to +-2s depending on many factors
+**NOTE:** Timings have a variance of up to +-1s depending on many factors
 
 ### Early Pixel Termination (1.065x speedup)
 We can cast 9 strategic rays (corners, edges, middle) And if all them dont hit anything, we consider the pixel to be black and early return.
@@ -386,6 +388,18 @@ for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
 Final time after optimisation: `16.7s`\
 Thats a `19.47/16.7 =` **1.17x speedup**
 
+### Changing Image
+We could keep optimising memory for a month, making small gains here and there. However a better use of our time is to change algorithms for ray-tri intercept. Any algorithm other than brute force will almost certainly be slower due the the low tri count, so I will be introducing a new image to benchmark against with many more triangles
+
+
+
+### Do an AABB Check first
+We can construct an Axis Aligned Bounding Box to check if its even possible for a ray to hit a triangle first before doing the actual ray-intersection check.
+This means when finding a ray-intersect we have 3 levels of granularity. First the AABB check which just needs 2 vectors and is fast, next the ray-tri intersect with `CoreTri` and lastly the full function which returns `RayHit`
+
+### Use an Oct Tree
+It has finally come time. Micro optimisations are now showing diminishing returns, just optimising memory access can only get us so far. We need to optimise the algorithm were using
+Currently we are brute forcing through every triangles AABB check, which yields an abysmal O(n). We can greatly speed this up by using an OctTri, a tree structure with 8 child nodes, each node being an AABB large enough to contain all its children. The children are equaly spaced regions of the parent, meaning we only 
 
 ## Limitations
 - **No Energy Conservation:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
