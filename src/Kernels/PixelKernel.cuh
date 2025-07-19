@@ -28,7 +28,7 @@ __device__ PixelOptimisationReport pixelOptimisationsCheck(
 
     PixelOptimisationReport dummyReport = PixelOptimisationReport(false, false, Tri());
 
-    #pragma unroll
+    #pragma unroll 3
     for (int x=0; x < 3; x++) {
         for (int y=0; y < 3; y++) {
             subPixelOffsetX = x * .5;
@@ -85,7 +85,7 @@ __global__ void getPixelColorKernal(
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x >= camera.screenParams.width || y >= camera.screenParams.height) {
-        printf("early return, %d, %d\n", x, y);
+        //printf("early return, %d, %d\n", x, y);
         return;
     }
 
@@ -112,6 +112,9 @@ __global__ void getPixelColorKernal(
     }
 
     Vec3 runningPixelColor = Vec3(0.0f, 0.0f, 0.0f);
+    #ifdef UNROLL_RAYPPLOOP
+        #pragma unroll UNROLL_RAYPPLOOP
+    #endif
     for (size_t r = 0; r < camera.screenParams.rayPerPixel; r++) {
         Vec3 runningAlbedo = Vec3(1.0f, 1.0f, 1.0f);
 
@@ -121,7 +124,6 @@ __global__ void getPixelColorKernal(
         size_t numBounces = 0;
 
         Vec3 lightSource = Vec3();
-        
         for (size_t i = 0; i < camera.screenParams.maxBounces; i++) {
             // check if the ray hits any triangles
             bool cameraRay = i == 0;
@@ -166,7 +168,9 @@ __global__ void getPixelColorKernal(
     }
     
     Vec3 color = (runningPixelColor / camera.screenParams.rayPerPixel);
-    //Vec3 finalColor = Vec3(powf(color.x, 1/2.2), powf(color.y, 1/2.2), powf(color.z, 1/2.2));
+    #ifdef GAMMA_CORRECTION
+    color = Vec3(powf(color.x, 1/2.2), powf(color.y, 1/2.2), powf(color.z, 1/2.2));
+    #endif
 
     deviceScreenBuffer.write(color, x, y);
 }

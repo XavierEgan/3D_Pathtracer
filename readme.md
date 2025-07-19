@@ -11,14 +11,23 @@ Originally implemented in single-threaded pure C, this new hardware-accelerated 
 - **Scene Complexity**: 16394 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 - **AABB Intersections**: ~69.1 trillion
-- **Ray-Tri Intersections**: ~36.6 billion
+- **Ray-Tri Intersections**: *~36.6 billion* - this number is probably wrong
 - **Throughput**: 154.8 billion AABB Intersection Tests per second
 
 Thats more than one AABB intersection test for every human that has ever lived per second!
 
 **NOTE:**intersectsion were calculated by rendering scene with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
 
+
 ![alt text](Readme_Images/img6.jpg)
+- **Render Time**: 712.0 seconds
+- **Resolution**: 2048x2048
+- **Samples**: 16384 rays per pixel
+- **Scene Complexity**: 588 triangles
+- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
+- **AABB Intersections**: ~135.7 trillion
+- **Ray-Tri Intersections**: ~1.3 trillion
+- **Throughput**: 190.6 billion AABB Intersection Tests per second
 
 ![alt text](Readme_Images/img1.jpg)
 **Note**: Gamma correction disabled for artistic preference

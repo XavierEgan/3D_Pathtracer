@@ -2,7 +2,7 @@
 
 #include "../Pathtracer.cuh"
 
-void benchmarkImage1() {
+void benchmarkImage2() {
     Vec3 
     tlf, blf,
     tlb, blb,
@@ -20,12 +20,12 @@ void benchmarkImage1() {
     trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
     brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    const unsigned int width = 2048;//4096
-    const unsigned int height = 2048;
+    const unsigned int width = 2048/4;//4096
+    const unsigned int height = 2048/4;
     const float verticalFov = 90 * (3.1415f/180);
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 64;
+    const unsigned int rayPerPixel = 128 * 32;
     const unsigned int maxBounces = 32;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
@@ -42,69 +42,84 @@ void benchmarkImage1() {
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 0.7f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 0.6f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
+    HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
+
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
+    HostMesh backWallMesh = HostMesh::plane(blb, brb, trb, tlb, backWallMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
+
+    float backWallLightSize = 0.4f;
+    float backWallDistFromWall = 0.1f;
+    HostMaterial backWallLightMaterial = HostMaterial(
+        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+    );
+    MaterialID backWallLightMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallLightMaterial);
+    HostMesh backWallLightMesh = HostMesh::plane(
+        Vec3(1.0f - backWallDistFromWall, backWallLightSize, backWallLightSize), 
+        Vec3(1.0f - backWallDistFromWall, backWallLightSize, -backWallLightSize), 
+        Vec3(1.0f - backWallDistFromWall, -backWallLightSize, -backWallLightSize),
+        Vec3(1.0f - backWallDistFromWall, -backWallLightSize, backWallLightSize),
+        backWallLightMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(backWallLightMesh);
 
     HostMaterial rightWallMaterial = HostMaterial(
         0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID rightWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(rightWallMaterial);
+    HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(rightWallMesh);
+
 
     HostMaterial roofMaterial = HostMaterial(
         0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID roofMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(roofMaterial);
+    HostMesh roofMesh = HostMesh::plane(trf, tlf, tlb, trb, roofMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(roofMesh);
+
 
     HostMaterial floorMaterial = HostMaterial(
         0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
-
-    HostMaterial randMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
-    );
-    MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
-
-    // printf("leftWallMaterialID: %d\n", leftWallMaterialID.materialID);
-
-    HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
-
-    HostMesh backWallMesh = HostMesh::plane(blb, brb, trb, tlb, backWallMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
-
-    HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(rightWallMesh);
-
-    HostMesh roofMesh = HostMesh::plane(trf, tlf, tlb, trb, roofMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(roofMesh);
-
     HostMesh floorMesh = HostMesh::plane(brb, blb, blf, brf, floorMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(floorMesh);
 
-    unsigned int seed = 0;
 
-    HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(randMesh);
+    // HostMaterial causticSphereMaterial = HostMaterial(
+    //     1.0f, 1.3f, 0.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+    // );
+    // MaterialID causticSphereID = hostResourceManager.hostMaterialManager.registerMaterial(causticSphereMaterial);
+    // HostMesh causticSphereMesh = HostMesh::causticSphere(0.5f, Vec3(0, 0, .2), causticSphereID, 1.0f, 256/4, 128/4);
+    // hostResourceManager.hostMeshManager.registerMesh(causticSphereMesh);
+
+
+    // printf("leftWallMaterialID: %d\n", leftWallMaterialID.materialID);
+    HostMaterial utahTeapotMaterial = HostMaterial(
+        1.0f, 1.33f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+    );
+    MaterialID utahTeapotMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(utahTeapotMaterial);
+    HostMesh utahTeapot = HostMesh::utahTeapot(Vec3(0, -0.5f, 0.2f), 0.5f, utahTeapotMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(utahTeapot);
+
+    
+
+    // HostMesh icosahedron1 = HostMesh::icosahedron(0.5f, Vec3(0, 0, -.5), randMaterialID);
+    // hostResourceManager.hostMeshManager.registerMesh(icosahedron1);
+    // HostMesh icosahedron2 = HostMesh::icosahedron(0.5f, Vec3(0, 0, .5), randMaterialID);
+    // hostResourceManager.hostMeshManager.registerMesh(icosahedron2);
+
+    unsigned int seed = 0;
     
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
 
-    pathtracer.render((char*)"test.jpg");
+    pathtracer.render((char*)"dontdelte.jpg");
 }
-
-// HostMesh utahTeapot = HostMesh::utahTeapot(Vec3(0, -0.5f, 0.2f), 0.5f, randMaterialID);
-// hostResourceManager.hostMeshManager.registerMesh(utahTeapot);
-
-// HostMesh causticSphere = HostMesh::causticSphere(0.5f, Vec3(0, 0, .2), randMaterialID, 1.0f, 128, 64);
-// hostResourceManager.hostMeshManager.registerMesh(causticSphere);
-
-// HostMesh icosahedron1 = HostMesh::icosahedron(0.5f, Vec3(0, 0, -.5), randMaterialID);
-// hostResourceManager.hostMeshManager.registerMesh(icosahedron1);
-// HostMesh icosahedron2 = HostMesh::icosahedron(0.5f, Vec3(0, 0, .5), randMaterialID);
-// hostResourceManager.hostMeshManager.registerMesh(icosahedron2);
