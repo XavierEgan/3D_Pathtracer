@@ -16,9 +16,14 @@ public:
         /*
         points should be ccw
         */
+        Vec3 p1uv = Vec3(1, 1, 0);
+        Vec3 p2uv = Vec3(0, 1, 0);
+        Vec3 p3uv = Vec3(0, 0, 0);
+        Vec3 p4uv = Vec3(1, 0, 0);
+
         std::vector<Tri> planeTris = {
-            Tri(c1, c2, c3, materialID), 
-            Tri(c1, c3, c4, materialID)
+            Tri(c1, c2, c3, p1uv, p2uv, p3uv, materialID), 
+            Tri(c1, c3, c4, p1uv, p3uv, p4uv, materialID)
         };
 
         return HostMesh(planeTris);

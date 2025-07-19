@@ -49,7 +49,11 @@ struct Tri {
     }
 
     __host__ __device__ Vec3 getUV(const Vec3& baryCoords) const {
-        return v0uv * baryCoords.x + v1uv * baryCoords.y + v2uv * baryCoords.z;
+        Vec3 uv =  v0uv * baryCoords.z + v1uv * baryCoords.x + v2uv * baryCoords.y;
+
+        uv.y = (-(uv.y * 2.0f - 1.0f) + 1.0f) * 0.5f;
+
+        return uv;
     }
 
     __host__ __device__ AABB makeAABB() const {

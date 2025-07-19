@@ -3,11 +3,16 @@
 #include <vector>
 #include "../Math/Tri.cuh"
 
+#include <filesystem>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../Ext/stb_image.h"
+
 class HostMap {
     std::vector<unsigned char> mapData;
-    unsigned int mapWidth;
-    unsigned int mapHeight;
-    unsigned int channels;
+    int mapWidth;
+    int mapHeight;
+    int channels;
 
 public:
     HostMap() = delete;
@@ -17,6 +22,24 @@ public:
         mapData.push_back(static_cast<unsigned char>(color.x * 255));
         mapData.push_back(static_cast<unsigned char>(color.y * 255));
         mapData.push_back(static_cast<unsigned char>(color.z * 255));
+    }
+    HostMap(const char* filename) {
+        unsigned char *data = stbi_load(filename, &mapWidth, &mapHeight, &channels, 0);
+
+        if (!data) {
+            printf("[HOST] Error loading %s. Message: %s\n", filename, stbi_failure_reason());
+            std::string path = "./";
+
+            for (const auto & entry : std::filesystem::directory_iterator(path)) {
+                std::cout << entry.path() << std::endl;
+            }
+
+            return;
+        }
+
+        mapData = std::vector(data, data + (mapWidth * mapHeight * channels));
+
+        stbi_image_free(data);
     }
     
     unsigned int getWidth() const {

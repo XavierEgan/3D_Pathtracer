@@ -48,6 +48,7 @@ __device__ __forceinline__ void swap(float& a, float& b) {
 }
 
 __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const Vec3& edge1, const Vec3& offset) {
+    //https://en.wikipedia.org/wiki/Normal_mapping
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
     Vec3 normal = triNormal;
     Vec3 absn = Vec3(fabs(normal.x), fabs(normal.y), fabs(normal.z));

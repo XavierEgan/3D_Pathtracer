@@ -42,12 +42,12 @@ void benchmarkImage1() {
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 0.7f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3())
+        0.0f, 1.0f, 0.7f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1,1,1)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
@@ -76,7 +76,7 @@ void benchmarkImage1() {
     HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
 
-    HostMesh backWallMesh = HostMesh::plane(trb, tlb, blb, brb, backWallMaterialID);
+    HostMesh backWallMesh = HostMesh::plane(blb, brb, trb, tlb, backWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
 
     HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
