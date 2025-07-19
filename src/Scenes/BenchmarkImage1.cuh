@@ -67,7 +67,7 @@ void benchmarkImage1() {
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
     HostMaterial randMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, .9f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
 

@@ -57,13 +57,20 @@ public:
     }
 
     __device__ Vec3 getAlbedo(float u, float v) const {
-        int x = static_cast<int>(u * textureMapWidth);
-        int y = static_cast<int>(v * textureMapHeight);
+        #ifdef DEBUG
+        if (u > 1.0f || v > 1.0f) {
+            printf("[DEVICE] getAlbedo u or v is not in range -- u=%d, v=%d\n", u, v);
+            return Vec3();
+        }
+        #endif
+
+        int x = static_cast<int>(u * (textureMapWidth - 1));
+        int y = static_cast<int>(v * (textureMapHeight - 1));
         int index = (y * textureMapWidth + x) * textureMapChannels;
 
         #ifdef DEBUG
         if (x >= textureMapWidth || y >= textureMapHeight) {
-            printf("[DEVICE] getAlbedo out of range access\n");
+            printf("[DEVICE] getAlbedo out of range access -- x=%d, y=%d -- textureMapWidth=%d, textureMapHeight=%d\n", x, y, textureMapWidth, textureMapHeight);
             return Vec3();
         }
         #endif
@@ -74,6 +81,10 @@ public:
             textureMapData[index + 2] / 255.0f
         );
 
+        // if (textureMapData[0] == 255, textureMapData[1] == 255, textureMapData[2] == 229) {
+        //     printf("%d, %d, %d\n", textureMapData[0], textureMapData[1], textureMapData[2]);
+        // }
+
         return ret;
     }
 
@@ -83,8 +94,8 @@ public:
             return Vec3();
         }
 
-        int x = static_cast<int>(u * normalMapWidth);
-        int y = static_cast<int>(v * normalMapHeight);
+        int x = static_cast<int>(u * (normalMapWidth - 1));
+        int y = static_cast<int>(v * (normalMapHeight - 1));
         int index = (y * normalMapWidth + x) * normalMapChannels;
 
         #ifdef DEBUG
