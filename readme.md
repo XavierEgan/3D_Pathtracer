@@ -110,19 +110,19 @@ We can also estimate an improvement for larger scenes. Because it would be infea
 The increased triangle count can be estimated as a linear multiplier on the time taken for the CPU version since the triangles were stored in a contiguous block of memory and accessed at O(1) time and every triangle was checked once, leading to O(n) relative to the traingle count.\
 The increased sample count cant also be estimated as a linear multiplier since it just specifies how many rays are cast per pixel\
 If we take the previous image that took `18322.2s` to render and we compare it to the image rendered with V2 below that took `Xs` to render, we can come up with an estimate of speed improvement.
-<!-- image -->
-- **Render Time**:
+![alt text](image.png)
+- **Render Time**: 3299.6s
 - **Resolution**: 512x512
 - **Samples**: 8192 rays per pixel
 - **Scene Complexity**: 66146 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
-the resolution is `(512x512) / (2048×2048) = 1/16x`
-the samples are `8192 / 2048 = 4x`
-the complexity is `66146 / 30 = 2204.87x`
+the resolution is `(512x512) / (2048×2048) = 1/16x`\
+the samples are `8192 / 2048 = 4x`\
+the complexity is `66146 / 30 = 2204.87x`\
 
-So the final estimated time to render this image with V1 is `(1/16) * 4 * 2204.87 * 18322.2 = 10099517.3s = 116.9 days`
-
+So the final estimated time to render this image with V1 is `(1/16) * 4 * 2204.87 * 18322.2 = 10099517.3s = 116.9 days`\
+`10099517.3 / 3299.6 = `
 
 
 #### Why not 16,384x speedup?
