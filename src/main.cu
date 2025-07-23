@@ -5,8 +5,9 @@
 #include "Pathtracer.cuh"
 #include "Scenes/BenchmarkImage1.cuh"
 #include "Scenes/BenchmarkImage2.cuh"
+#include "Scenes/BenchmarkImage3.cuh"
 
 int main(void) {
-    benchmarkImage1();
+    benchmarkImage3();
     return 0;
 }

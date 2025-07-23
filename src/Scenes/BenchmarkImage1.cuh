@@ -47,7 +47,7 @@ void benchmarkImage1() {
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap("gnruied.png"), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
@@ -66,10 +66,10 @@ void benchmarkImage1() {
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
-    // HostMaterial randMaterial = HostMaterial(
-    //     0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, .9f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
-    // );
-    // MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
+    HostMaterial randMaterial = HostMaterial(
+        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, .9f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+    );
+    MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
 
     HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
@@ -86,10 +86,10 @@ void benchmarkImage1() {
     HostMesh floorMesh = HostMesh::plane(brb, blb, blf, brf, floorMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(floorMesh);
 
-    // unsigned int seed = 0;
+    unsigned int seed = 0;
 
-    // HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
-    // hostResourceManager.hostMeshManager.registerMesh(randMesh);
+    HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
+    hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
 
@@ -99,8 +99,8 @@ void benchmarkImage1() {
 // HostMesh utahTeapot = HostMesh::utahTeapot(Vec3(0, -0.5f, 0.2f), 0.5f, randMaterialID);
 // hostResourceManager.hostMeshManager.registerMesh(utahTeapot);
 
-// HostMesh causticSphere = HostMesh::causticSphere(0.5f, Vec3(0, 0, .2), randMaterialID, 1.0f, 128, 64);
-// hostResourceManager.hostMeshManager.registerMesh(causticSphere);
+// HostMesh wavySphere = HostMesh::wavySphere(0.5f, Vec3(0, 0, .2), randMaterialID, 1.0f, 128, 64);
+// hostResourceManager.hostMeshManager.registerMesh(wavySphere);
 
 // HostMesh icosahedron1 = HostMesh::icosahedron(0.5f, Vec3(0, 0, -.5), randMaterialID);
 // hostResourceManager.hostMeshManager.registerMesh(icosahedron1);

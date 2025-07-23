@@ -155,8 +155,9 @@ public:
         return tris;
     }
 
-    static HostMesh causticSphere(
-        float radius, Vec3 pos, MaterialID matId,
+    static HostMesh wavySphere(
+        float radius, const Vec3 pos, MaterialID matId,
+        float xSquish,
         float zSquish,
         int slices = 64, int stacks = 32,
         float waveAmp = 0.08f, float waveFreq = 10.0f)
@@ -167,7 +168,7 @@ public:
         std::vector<std::vector<Vec3>> verts(stacks + 1);
         for (int i = 0; i <= stacks; ++i) {
             float v = float(i) / stacks;
-            float theta = v * 3.14159;  // 0 to pi (latitude)
+            float theta = v * 3.14159;
 
             verts[i].resize(slices + 1);
             for (int j = 0; j <= slices; ++j) {
@@ -180,7 +181,7 @@ public:
 
                 float r = radius * (1.0f + waveAmp * sinf(waveFreq * theta + waveFreq * phi));
 
-                Vec3 p = Vec3(x, y, z * zSquish) * r + pos;
+                Vec3 p = Vec3(x * xSquish, y, -z * zSquish) * r + pos; // -z to turn it inside out
                 verts[i][j] = p;
             }
         }
@@ -201,21 +202,28 @@ public:
         return mesh;
     }
 
-    static HostMesh utahTeapot(Vec3 pos, float scale, MaterialID matId) {
+    static HostMesh utahTeapot(Vec3 pos, float scale, MaterialID matId, float yRotationDeg = 0.0f) {
         HostMesh mesh = HostMesh();
+
+        float cosY = cos(yRotationDeg * 3.141592/180);
+        float sinY = sin(yRotationDeg * 3.141592/180);
+
+        Vec3 vertices[3];
+
         for (int i=0; i < teapot_count; i+=9) {
-            mesh.addTri(
-                Vec3(
-                    teapot[i + 2], -teapot[i + 1], -teapot[i + 0]
-                ) * scale + pos,
-                Vec3(
-                    teapot[i + 5], -teapot[i + 4], -teapot[i + 3]
-                ) * scale + pos,
-                Vec3(
-                    teapot[i + 8], -teapot[i + 7], -teapot[i + 6]
-                ) * scale + pos,
-                matId
-            );
+            for (int v=0; v < 3; v++) {
+                Vec3 original(teapot[i + v*3], -teapot[i + v*3 + 1], -teapot[i + v*3 + 2]);
+
+                // Apply Y rotation
+                Vec3 rotated(
+                    original.x * cosY + original.z * sinY,
+                    original.y,
+                    -original.x * sinY + original.z * cosY
+                );
+
+                vertices[v] = rotated * scale + pos;
+            }
+            mesh.addTri(vertices[0], vertices[1], vertices[2], matId);
         }
         return mesh;
     }

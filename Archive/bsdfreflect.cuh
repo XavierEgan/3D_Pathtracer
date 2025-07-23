@@ -84,7 +84,7 @@
             float n = ni/nr;
             float discriminant = 1 - n * n * (1 - cosThetaI * cosThetaI);
 
-            if (discriminant < 1e-4f) {
+            if (discriminant < EPSILON) {
                 // TIR
                 g_direction = (g_direction - 2 * refractionNormal.dot(g_direction) * refractionNormal).normalized();
 

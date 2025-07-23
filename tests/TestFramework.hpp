@@ -54,4 +54,4 @@ struct TestManager {
 
 #define ASSERT_EQ(actual, expected) if ((expected) != (actual)) throw std::runtime_error("Assertion failed: " #expected #actual)
 
-#define ASSERT_CLOSE(actual, expected) if (!((expected - actual) >= -1e-4f && (expected - actual) <= 1e-4f)) throw std::runtime_error("Assertion failed: " #expected #actual)
+#define ASSERT_CLOSE(actual, expected) if (!((expected - actual) >= -EPSILON && (expected - actual) <= EPSILON)) throw std::runtime_error("Assertion failed: " #expected #actual)

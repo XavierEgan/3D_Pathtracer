@@ -118,10 +118,10 @@ public:
         triDist.u = u;
         triDist.v = v;
 
-        bool hit = !(det > -1e-4f && det < 1e-4f) && 
+        bool hit = !(det > -EPSILON && det < EPSILON) && 
             u >= 0.0f && u <= 1.0f && 
             v >= 0.0f && u + v <= 1.0f && 
-            t > 1e-4f;
+            t > EPSILON;
 
         return hit;
     }
@@ -213,7 +213,7 @@ public:
         float n = ni/nr;
         float discriminant = 1 - n * n * (1 - cosThetaI * cosThetaI);
 
-        if (discriminant < 1e-4f) {
+        if (discriminant < EPSILON) {
             // TIR
             setDirection((direction - 2 * shiftedTriNormal.dot(direction) * shiftedTriNormal).normalized());
             
@@ -265,7 +265,7 @@ public:
         float u2 = randUniform(localSeed);
 
         bool refract = u1 < material.transmission;
-        bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f);
+        bool diffuse = u2 < powf(material.roughness, 1.0f/5.0f); // ^1/5 is just a function that makes it look somewhat correct
 
         bool facingBack = direction.dot(shiftedTriNormal) > 0;
 
