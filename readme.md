@@ -40,6 +40,8 @@ Thats more than one AABB intersection test for every human that has ever lived p
 - **Throughput**: 
 
 ## Quick Start
+Step 0:\
+Install the CUDA Toolkit onto your system from [here](https://developer.nvidia.com/cuda-toolkit)
 Step 1:\
 Clone the repo onto your device
 ```bash
@@ -67,11 +69,11 @@ cmake --build . --config Debug
 Step 4:\
 Run the project (depends if you chose Debug or Release before)
 ```bash
-Debug\d.exe
+Release\d
 ```
 or
 ```bash
-Release\d.exe
+Debug\d
 ```
 
 ## Performance Evolution
@@ -281,104 +283,6 @@ Its important to note that at 36 bytes, `CoreTri` is not aligned with cache line
 Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
 
-### Split `CoreTri` into 9 float arrays (Failed speedup)
-The idea for this improvement was that more data can be fetched into the cache, since we read 9 floats and then pull 9 whole cache lines in.
-This idea proably would have worked with float3's and making use of CUDA's __ldg() to load them into read only cache which has lower latency.
-```C++
-class DeviceTriBuffer {
-    Tri* tris;
-
-    float* coreTriVertex0Xs;
-    float* coreTriVertex0Ys;
-    float* coreTriVertex0Zs;
-
-    float* coreTriVertex1Xs;
-    float* coreTriVertex1Ys;
-    float* coreTriVertex1Zs;
-
-    float* coreTriVertex2Xs;
-    float* coreTriVertex2Ys;
-    float* coreTriVertex2Zs;
-    
-    size_t numTris;
-public:
-    __host__ DeviceTriBuffer() = delete;
-    __host__ DeviceTriBuffer(const HostMeshManager& hostMeshManager) {
-        std::vector<Tri> hostTris;
-        std::vector<float> hostCoreTriVertex0Xs;
-        std::vector<float> hostCoreTriVertex0Ys;
-        std::vector<float> hostCoreTriVertex0Zs;
-
-        std::vector<float> hostCoreTriVertex1Xs;
-        std::vector<float> hostCoreTriVertex1Ys;
-        std::vector<float> hostCoreTriVertex1Zs;
-
-        std::vector<float> hostCoreTriVertex2Xs;
-        std::vector<float> hostCoreTriVertex2Ys;
-        std::vector<float> hostCoreTriVertex2Zs;
-
-        int i=0;
-        for (HostMesh hm : hostMeshManager.getMeshs()) {
-            for (const Tri& t : hm.getTris()) {
-                hostTris.push_back(t);
-                
-                hostCoreTriVertex0Xs.push_back(t.coreTri.v0.x);
-                hostCoreTriVertex0Ys.push_back(t.coreTri.v0.y);
-                hostCoreTriVertex0Zs.push_back(t.coreTri.v0.z);
-
-                hostCoreTriVertex1Xs.push_back(t.coreTri.v1.x);
-                hostCoreTriVertex1Ys.push_back(t.coreTri.v1.y);
-                hostCoreTriVertex1Zs.push_back(t.coreTri.v1.z);
-
-                hostCoreTriVertex2Xs.push_back(t.coreTri.v2.x);
-                hostCoreTriVertex2Ys.push_back(t.coreTri.v2.y);
-                hostCoreTriVertex2Zs.push_back(t.coreTri.v2.z);
-            }
-            i++;
-        }
-
-        numTris = hostTris.size();
-
-        size_t size = hostTris.size() * sizeof(Tri);
-        size_t coreTriVertexSize = hostCoreTriVertex0Xs.size() * sizeof(float);
-
-        cudaError_t errs[20];
-
-        errs[2] = cudaMalloc(&coreTriVertex0Xs, coreTriVertexSize);
-        errs[3] = cudaMemcpy(coreTriVertex0Xs, hostCoreTriVertex0Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[4] = cudaMalloc(&coreTriVertex0Ys, coreTriVertexSize);
-        errs[5] = cudaMemcpy(coreTriVertex0Ys, hostCoreTriVertex0Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[6] = cudaMalloc(&coreTriVertex0Zs, coreTriVertexSize);
-        errs[7] = cudaMemcpy(coreTriVertex0Zs, hostCoreTriVertex0Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-
-        errs[8] = cudaMalloc(&coreTriVertex1Xs, coreTriVertexSize);
-        errs[9] = cudaMemcpy(coreTriVertex1Xs, hostCoreTriVertex1Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[10] = cudaMalloc(&coreTriVertex1Ys, coreTriVertexSize);
-        errs[11] = cudaMemcpy(coreTriVertex1Ys, hostCoreTriVertex1Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[12] = cudaMalloc(&coreTriVertex1Zs, coreTriVertexSize);
-        errs[13] = cudaMemcpy(coreTriVertex1Zs, hostCoreTriVertex1Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-
-        errs[14] = cudaMalloc(&coreTriVertex2Xs, coreTriVertexSize);
-        errs[15] = cudaMemcpy(coreTriVertex2Xs, hostCoreTriVertex2Xs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[16] = cudaMalloc(&coreTriVertex2Ys, coreTriVertexSize);
-        errs[17] = cudaMemcpy(coreTriVertex2Ys, hostCoreTriVertex2Ys.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-        errs[18] = cudaMalloc(&coreTriVertex2Zs, coreTriVertexSize);
-        errs[19] = cudaMemcpy(coreTriVertex2Zs, hostCoreTriVertex2Zs.data(), coreTriVertexSize, cudaMemcpyHostToDevice);
-
-    __device__ const CoreTri& getCoreTri(unsigned int i) const {
-        #ifdef DEBUG
-        if (i >= numTris) {
-            printf("[DEVICE ERROR] in getCoreTri, index out of range");
-        }
-        #endif
-        return CoreTri(
-            Vec3(coreTriVertex0Xs[i], coreTriVertex0Ys[i], coreTriVertex0Zs[i]),
-            Vec3(coreTriVertex1Xs[i], coreTriVertex1Ys[i], coreTriVertex1Zs[i]),
-            Vec3(coreTriVertex2Xs[i], coreTriVertex2Ys[i], coreTriVertex2Zs[i])
-        );
-    }
-```
-
 ### Use only `CoreTri` for intersection checks (1.17x speedup)
 If we modify the intersection loop and add another array to `TriBuffer` of `CoreTri`s, then we can just load `CoreTri`s and intersect with them, only loading the actual `Tri` we need
 ```C++
@@ -397,18 +301,15 @@ for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
 Final time after optimisation: `16.7s`\
 Thats a `19.47/16.7 =` **1.17x speedup**
 
-### Changing Image
-We could keep optimising memory for a month, making small gains here and there. However a better use of our time is to change algorithms for ray-tri intercept. Any algorithm other than brute force will almost certainly be slower due the the low tri count, so I will be introducing a new image to benchmark against with many more triangles
+### Change image
+The image we are using currently only has 30 triangles, meaning any optimisations we make to how were searching through them will almost certainly increase the time the program takes due to increased overhead and brnaching. We will only see the benefets of Acceleration Structures if we increase the triangle count, which is why we will now be benchmarking with this image:
 
 
-
-### Do an AABB Check first
+### Do an AABB Check first (N/A)
 We can construct an Axis Aligned Bounding Box to check if its even possible for a ray to hit a triangle first before doing the actual ray-intersection check.
-This means when finding a ray-intersect we have 3 levels of granularity. First the AABB check which just needs 2 vectors and is fast, next the ray-tri intersect with `CoreTri` and lastly the full function which returns `RayHit`
 
-### Use an Oct Tree
-It has finally come time. Micro optimisations are now showing diminishing returns, just optimising memory access can only get us so far. We need to optimise the algorithm were using
-Currently we are brute forcing through every triangles AABB check, which yields an abysmal O(n). We can greatly speed this up by using an OctTri, a tree structure with 8 child nodes, each node being an AABB large enough to contain all its children. The children are equaly spaced regions of the parent, meaning we only 
+#### Make a BVHT
+We can make a binary tree called a Bounding Volume Heirarchy Tree, where each node is an AABB
 
 ## Limitations
 - **No Energy Conservation:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.

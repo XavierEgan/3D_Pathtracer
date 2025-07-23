@@ -155,6 +155,10 @@ __global__ void getPixelColorKernal(
 
             // reflect the ray and update runningAlbedo and runningEmission
             activeRay.bsdfReflect(triMaterial, triHit, seed, runningAlbedo);
+
+            if (runningAlbedo.lengthSquared() < 0.01f) {
+                break; // ray contribution too small to matter
+            }
             
             numBounces++;
         }

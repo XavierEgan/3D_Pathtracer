@@ -34,7 +34,9 @@ public:
                 std::cout << entry.path() << std::endl;
             }
 
-            return;
+            // load the texture not found image
+            const char* imageNotFoundTexture = "../src/Textures/notLoadedTexture.png";
+            data = stbi_load(imageNotFoundTexture, &mapWidth, &mapHeight, &channels, 0);
         }
 
         mapData = std::vector(data, data + (mapWidth * mapHeight * channels));

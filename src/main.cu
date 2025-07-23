@@ -7,5 +7,6 @@
 #include "Scenes/BenchmarkImage2.cuh"
 
 int main(void) {
-    benchmarkImage2();
+    benchmarkImage1();
+    return 0;
 }
