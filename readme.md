@@ -4,14 +4,14 @@ This project is a 3D pathtracer implemented in C++ with hardware acceleration us
 
 Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in Performance Evolution section below).
 
-![alt text](Readme_Images/img5.jpg)
+![alt text](Readme_Images/overview_image_1.jpg)
 - **Render Time**: 446.39 seconds
 - **Resolution**: 512x512
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 16394 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 - **AABB Intersections**: ~69.1 trillion
-- **Ray-Tri Intersections**: *~36.6 billion* - this number is probably wrong
+- **Ray-Tri Intersections**: ~2.3 trillion
 - **Throughput**: 154.8 billion AABB Intersection Tests per second
 
 Thats more than one AABB intersection test for every human that has ever lived per second!
@@ -19,7 +19,7 @@ Thats more than one AABB intersection test for every human that has ever lived p
 **NOTE:**intersectsion were calculated by rendering scene with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
 
 
-![alt text](Readme_Images/img6.jpg)
+![alt text](Readme_Images/overview_image_2.jpg)
 - **Render Time**: 712.0 seconds
 - **Resolution**: 2048x2048
 - **Samples**: 16384 rays per pixel
@@ -29,7 +29,7 @@ Thats more than one AABB intersection test for every human that has ever lived p
 - **Ray-Tri Intersections**: ~1.3 trillion
 - **Throughput**: 190.6 billion AABB Intersection Tests per second
 
-![alt text](Readme_Images/img1.jpg)
+<!-- ![alt text](Readme_Images/img1.jpg)
 **Note**: Gamma correction disabled for artistic preference
 - **Render Time**: 4.6 seconds
 - **Resolution**: 2048×2048 (4.2M pixels)
@@ -37,7 +37,7 @@ Thats more than one AABB intersection test for every human that has ever lived p
 - **Scene Complexity**: 10 triangles
 - **Ray Intersections**: 
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
-- **Throughput**: 
+- **Throughput**:  -->
 
 ## Quick Start
 Step 0:\
@@ -85,14 +85,16 @@ Debug\d
 ### Improvement Over V1
 
 In V1 of this project, the following image took `18322.2s` to render.
-![alt text](Readme_Images/img2.png)
+![alt text](Readme_Images/V1_image_1.png)
+- **Render Time**: 18322.2 seconds
 - **Resolution**: 2048×2048
 - **Samples**: 2,048 rays per pixel  
 - **Scene Complexity**: 30 triangles
 - **Hardware**: Intel Core i9-12900k
 
 Comparing to a render of V2, which took `4.16s` to render
-![alt text](Readme_Images/img3.jpg)
+![alt text](Readme_Images/V2_image_1.jpg)
+- **Render Time**: 4.16 seconds
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 2,048 rays per pixel
 - **Scene Complexity**: 30 triangles
@@ -100,18 +102,38 @@ Comparing to a render of V2, which took `4.16s` to render
 
 **NOTE:** The images are not identical, however they the main differences are simple texture and color. The geometry is identical.
 
-Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup**
+Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup for small scenes**
 
 That means every second spent rendering with V2 is equivelent to an hour of rending with V1
 
+We can also estimate an improvement for larger scenes. Because it would be infeasable to leave my computer running for several months, we will have to estimate how long it would have taken the previous version to render.\
+The increased triangle count can be estimated as a linear multiplier on the time taken for the CPU version since the triangles were stored in a contiguous block of memory and accessed at O(1) time and every triangle was checked once, leading to O(n) relative to the traingle count.\
+The increased sample count cant also be estimated as a linear multiplier since it just specifies how many rays are cast per pixel\
+If we take the previous image that took `18322.2s` to render and we compare it to the image rendered with V2 below that took `Xs` to render, we can come up with an estimate of speed improvement.
+<!-- image -->
+- **Render Time**:
+- **Resolution**: 512x512
+- **Samples**: 8192 rays per pixel
+- **Scene Complexity**: 66146 triangles
+- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
+
+the resolution is `(512x512) / (2048×2048) = 1/16x`
+the samples are `8192 / 2048 = 4x`
+the complexity is `66146 / 30 = 2204.87x`
+
+So the final estimated time to render this image with V1 is `(1/16) * 4 * 2204.87 * 18322.2 = 10099517.3s = 116.9 days`
+
+
+
 #### Why not 16,384x speedup?
 - **Texture sampling overhead** - V2 includes texture mapping
+- **Better material system** - V2 includes a more complex material system, allowing transparent objects.
 - **Launch overhead** - CUDA kernel launches have costs
-- **Unoptimized code** - V2 is initial implementation without optimizations
+- **Slower Cores** - CUDA cores are optimised for massive throughput, as opposed to CPU cores which are optimised for single core performance.
 
 ## Optimisations
 We will be Benchmarking with this image:
-![alt text](Readme_Images/img4.png)
+![alt text](benchmark_image_1/.png)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 30 triangles

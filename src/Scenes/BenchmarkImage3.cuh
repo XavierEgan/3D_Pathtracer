@@ -25,7 +25,7 @@ void benchmarkImage3() {
     const float verticalFov = 60 * (3.1415f/180);
     const float horizontalFov = 60 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 1;
+    const unsigned int rayPerPixel = 128 * 64;
     const unsigned int maxBounces = 16;
     Vec3 camOrigin = Vec3(-.5,-.2,1);
     Vec3 camForward = Vec3(.5,-.1,-1);
@@ -37,18 +37,18 @@ void benchmarkImage3() {
     const float tableDistFromFloor = 0.5f;
 
     const float wavySphereRadii = 0.1f;
-    const Vec3 wavySpherePos = Vec3(0.1f, tableDistFromFloor - 1.0f + wavySphereRadii, -0.05f);
+    const Vec3 wavySpherePos = Vec3(0.05f, tableDistFromFloor - 1.0f + wavySphereRadii, -0.05f);
     const float wavySphereZsquish = 1.0f;
     const float wavySphereXsquish = 1.0f;
     const int wavySphereSlices = 256 / 1;
     const int wavySphereStacks = 128 / 1;
     
-    const Vec3 utahTeapotPos = Vec3(0.25f, -0.5f, 0.2f);
+    const Vec3 utahTeapotPos = Vec3(0.20f, -0.5f, 0.2f);
     const float utahTeapotScale = 0.1f;
     const float utahTeapotRotationDeg = 150.0f;
 
     const float icoSize = 0.1f;
-    const Vec3 icoPos = Vec3(-0.225f, tableDistFromFloor - 1.0f + icoSize - 0.02f, 0.15f);
+    const Vec3 icoPos = Vec3(-0.275f, tableDistFromFloor - 1.0f + icoSize - 0.02f, 0.15f);
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
 
