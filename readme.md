@@ -2,7 +2,7 @@
 ## Overview
 This project is a 3D pathtracer implemented in C++ with hardware acceleration using CUDA.
 
-Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in Performance Evolution section below).
+Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in the Performance Evolution section below).
 
 ![alt text](Readme_Images/overview_image_3.jpg)
 - **Render Time**: 3299.6s (before BVHT)
@@ -24,9 +24,9 @@ Originally implemented in single-threaded pure C, this new hardware-accelerated 
 - **Ray-Tri Intersections**: ~36.6 billion
 - **Throughput**: 154.8 billion AABB Intersection Tests per second
 
-Thats more than one AABB intersection test for every human that has ever lived per second!
+That's more than one AABB intersection test for every human that has ever lived per second!
 
-**NOTE:**intersectsion were calculated by rendering scene with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
+**NOTE:**intersections were calculated by rendering scenes with 64x less resolution and turning performance analytics on, then multiplying the results by 64. 
 
 
 ![alt text](Readme_Images/overview_image_2.jpg)
@@ -39,19 +39,11 @@ Thats more than one AABB intersection test for every human that has ever lived p
 - **Ray-Tri Intersections**: ~47.2 billion
 - **Throughput**: 190.6 billion AABB Intersection Tests per second
 
-<!-- 
-removed coz its not that impressive lol
-![alt text](Readme_Images/img1.jpg)
-**Note**: Gamma correction disabled for artistic preference
-- **Render Time**: 4.6 seconds
-- **Resolution**: 2048×2048 (4.2M pixels)
-- **Samples**: 8,192 rays per pixel
-- **Scene Complexity**: 10 triangles
-- **Ray Intersections**: 
-- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
-- **Throughput**:  -->
-
 ## Quick Start
+**Requirements:**\
+- NVIDIA GPU
+- CUDA Toolkit
+- CMake 3.18+
 Step 0:\
 Install the CUDA Toolkit onto your system from [here](https://developer.nvidia.com/cuda-toolkit)
 Step 1:\
@@ -112,30 +104,9 @@ Comparing to a render of V2, which took `4.16s` to render
 - **Scene Complexity**: 30 triangles
 - **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
 
-**NOTE:** The images are not identical, however they the main differences are simple texture and color. The geometry is identical.
+**NOTE:** The images are not identical, however the main differences are simple texture and color. The geometry is identical.
 
-Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup for small scenes**
-
-That means every second spent rendering with V2 is equivelent to an hour of rending with V1
-
-We can also estimate an improvement for larger scenes. Because it would be infeasable to leave my computer running for several months, we will have to estimate how long it would have taken the previous version to render.\
-The increased triangle count can be estimated as a linear multiplier on the time taken for the CPU version since the triangles were stored in a contiguous block of memory and accessed at O(1) time and every triangle was checked once, leading to O(n) relative to the traingle count.\
-The increased sample count cant also be estimated as a linear multiplier since it just specifies how many rays are cast per pixel\
-If we take the previous image that took `18322.2s` to render and we compare it to the image rendered with V2 below that took `Xs` to render, we can come up with an estimate of speed improvement.
-![alt text](Readme_Images/image.jpg)
-- **Render Time**: 3299.6s
-- **Resolution**: 512x512
-- **Samples**: 8192 rays per pixel
-- **Scene Complexity**: 66146 triangles
-- **Hardware**: NVIDIA RTX 4090 (16,384 CUDA cores)
-
-the resolution is `(512x512) / (2048×2048) = 1/16x`\
-the samples are `8192 / 2048 = 4x`\
-the complexity is `66146 / 30 = 2204.87x`\
-
-So the final estimated time to render this image with V1 is `(1/16) * 4 * 2204.87 * 18322.2 = 10099517.3s = 116.9 days`\
-`10099517.3 / 3299.6 = `
-
+Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup**
 
 #### Why not 16,384x speedup?
 - **Texture sampling overhead** - V2 includes texture mapping
@@ -145,7 +116,7 @@ So the final estimated time to render this image with V1 is `(1/16) * 4 * 2204.8
 
 ## Optimisations
 We will be Benchmarking with this image:
-![alt text](benchmark_image_1/.png)
+![alt text](Readme_Images\benchmark_image_1.jpg)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 30 triangles
@@ -156,7 +127,7 @@ We will be Benchmarking with this image:
 **NOTE:** Timings have a variance of up to +-1s depending on many factors
 
 ### Early Pixel Termination (1.065x speedup)
-We can cast 9 strategic rays (corners, edges, middle) And if all them dont hit anything, we consider the pixel to be black and early return.
+We can cast 9 strategic rays (corners, edges, middle) And if all of them don't hit anything, we consider the pixel to be black and early return.
 
 In code that looks like this:
 ```C++
@@ -182,7 +153,7 @@ Final time after optimisation: `42.8s`\
 Thats a `45.6/42.8 =` **1.065x speedup**
 
 ### Change `TriHit` To Use Pointers (1.48x speedup)
-This optimisation was descovered by accident while working on the below optimisation (Ray Coherence)
+This optimisation was discovered by accident while working on the below optimisation (Ray Coherence)
 
 `TriHit` previously Looked like this
 ```C++
@@ -286,7 +257,7 @@ Thats a `28.9/27.3 =` **1.12x speedup**
 ### Remove Error Checking In Release Build (1.12x speedup)
 Since we can be reasonably confident that out of bound memory accesses wont take place in build, we can use a preprocessor conditional to not run the checks.
 
-This is especially usefull in the `getTri` method, as this is run for every ray-tri intercept check
+This is especially useful in the `getTri` method, as this is run for every ray-tri intercept check
 ```C++
 __device__ const Tri& getTri(unsigned int i) const {
     #ifdef DEBUG
@@ -302,7 +273,7 @@ Final time after optimisation: `24.3s`\
 Thats a `27.3/24.3 =` **1.12x speedup**
 
 ### Rewrite `bsdfReflect` (1.08x speedup)
-`bsdfReflect` was in desperate need of a rewrite, the code was messy and ineficient
+`bsdfReflect` was in desperate need of a rewrite, the code was messy and inefficient
 
 The main way this improved performance was removing branches and only performing computation needed for the type of reflection
 
@@ -310,9 +281,9 @@ Final time after optimisation: `22.5s`\
 Thats a `24.3/22.5 =` **1.08x speedup**
 
 ### Split Tri into CoreTri and Tri (1.16x speedup)
-This optimisation makes ray intersection checking faster since it stores a new struct, `CoreTri` (9 floats, 36 bytes) in a seperate array from `Tri`. When the loop inside `getTriIntersection` runs, we get more cache hits. This is because when we arrange `CoreTri`s in contiguous memory, its more likely for data we need to be arranged on the same cache line. This means we are more likely to bring in the verticies (what we actually need for ray-tri intercept) into the cache, rather than bringing in UV's or other almost useless information (only usefull when we get a hit).
+This optimisation makes ray intersection checking faster since it stores a new struct, `CoreTri` (9 floats, 36 bytes) in a separate array from `Tri`. When the loop inside `getTriIntersection` runs, we get more cache hits. This is because when we arrange `CoreTri`s in contiguous memory, it's more likely for data we need to be arranged on the same cache line. This means we are more likely to bring in the vertices (what we actually need for ray-tri intercept) into the cache, rather than bringing in UV's or other almost useless information (only useful when we get a hit).
 
-Its important to note that at 36 bytes, `CoreTri` is not aligned with cache lines meaning we may bring in part of the next `CoreTri` into the cache, but not the whole thing
+It's important to note that at 36 bytes, `CoreTri` is not aligned with cache lines meaning we may bring in part of the next `CoreTri` into the cache, but not the whole thing
 
 Final time after optimisation: `19.47s`\
 Thats a `22.5/19.47 =` **1.16x speedup**
@@ -334,16 +305,6 @@ for (int i = 0; i < deviceTriBuffer.getNumTris(); i++) {
 16.7
 Final time after optimisation: `16.7s`\
 Thats a `19.47/16.7 =` **1.17x speedup**
-
-### Change image
-The image we are using currently only has 30 triangles, meaning any optimisations we make to how were searching through them will almost certainly increase the time the program takes due to increased overhead and brnaching. We will only see the benefets of Acceleration Structures if we increase the triangle count, which is why we will now be benchmarking with this image:
-
-
-### Do an AABB Check first (N/A)
-We can construct an Axis Aligned Bounding Box to check if its even possible for a ray to hit a triangle first before doing the actual ray-intersection check.
-
-#### Make a BVHT
-We can make a binary tree called a Bounding Volume Heirarchy Tree, where each node is an AABB
 
 ## Limitations
 - **No Energy Conservation:** The lighting model multiplies albedo during bounces and only adds emission when directly hitting a light source. This doesn't conserve energy, leading to biased or overly bright/dark results in complex scenes.
