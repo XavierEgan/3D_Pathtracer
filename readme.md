@@ -5,7 +5,7 @@ This project is a 3D pathtracer implemented in C++ with hardware acceleration us
 Originally implemented in single-threaded pure C, this new hardware-accelerated version achieves **~4404.38x** speed improvement (more details in the Performance Evolution section below).
 
 ![alt text](Readme_Images/overview_image_3.jpg)
-- **Render Time**: 3299.6s (before BVHT)
+- **Render Time**: 3299.6s (O(n) times are not pretty)
 - **Resolution**: 512x512
 - **Samples**: 8192 rays per pixel
 - **Scene Complexity**: 66146 triangles
@@ -15,7 +15,7 @@ Originally implemented in single-threaded pure C, this new hardware-accelerated 
 - **Throughput**: 208.8 billion AABB Intersection Tests per second
 
 ![alt text](Readme_Images/overview_image_1.jpg)
-- **Render Time**: 446.39 seconds (before BVHT)
+- **Render Time**: 446.39 seconds
 - **Resolution**: 512x512
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 16394 triangles
