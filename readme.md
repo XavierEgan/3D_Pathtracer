@@ -49,8 +49,8 @@ Install the CUDA Toolkit onto your system from [here](https://developer.nvidia.c
 Step 1:\
 Clone the repo onto your device
 ```bash
-git clone https://github.com/yourusername/cuda-pathtracer.git
-cd cuda-pathtracer
+git clone https://github.com/XavierEgan/3D_Pathtracer.git
+cd 3D_Pathtracer
 ```
 Step 2:\
 Setup the build directory
