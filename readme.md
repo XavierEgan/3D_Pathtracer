@@ -89,7 +89,7 @@ Debug\d
 ### Improvement Over V1
 
 In V1 of this project, the following image took `18322.2s` to render.
-![alt text](Readme_Images/V1_image_1.png)
+![alt text](Readme_Images/V1_image_1.jpg)
 - **Render Time**: 18322.2 seconds
 - **Resolution**: 2048×2048
 - **Samples**: 2,048 rays per pixel  
@@ -116,7 +116,7 @@ Performance Speedup: `18322.2 / 4.16 =` **4404.38x Speedup**
 
 ## Optimisations
 We will be Benchmarking with this image:
-![alt text](Readme_Images\benchmark_image_1.jpg)
+![alt text](Readme_Images/benchmark_image_1.jpg)
 - **Resolution**: 2048×2048 (4.2M pixels)
 - **Samples**: 8,192 rays per pixel
 - **Scene Complexity**: 30 triangles
