@@ -83,7 +83,6 @@ Debug\d
 ## Performance Evolution
 - **V1**: Single Threaded CPU (~5 hours)
 - **V2**: CUDA (~4.16 seconds)
-- **V3**: OptiX and OpenGL Mathematics (GLM) (Unknown, future project)
 
 **NOTE:** V1 did have multithreaded through #pragma omp parallel for, however it was never benchmarked, so single threaded numbers are being used
 ### Improvement Over V1
