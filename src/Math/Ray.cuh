@@ -51,8 +51,11 @@ __host__ __device__ static Vec3 getNormalFromOffset(const Vec3& triNormal, const
     //https://en.wikipedia.org/wiki/Normal_mapping
     // since normal is orthogonal to edge1 we can construct a full orthonormal basis from just crossing normal and edge1
     Vec3 normal = triNormal;
-    Vec3 arbitrary = normal.x > 0.9f ? Vec3(0.0f, 1.0f, 0.0f) : Vec3(1.0f, 0.0f, 0.0f);
-    Vec3 tangent = arbitrary.cross(normal);
+    Vec3 absn = Vec3(fabs(normal.x), fabs(normal.y), fabs(normal.z));
+    Vec3 ref = (absn.x <= absn.y && absn.x <= absn.z) ? Vec3(1,0,0)
+    : (absn.y <= absn.z) ? Vec3(0,1,0)
+    : Vec3(0,0,1);
+    Vec3 tangent = ref.cross(normal);
     Vec3 bitangent = normal.cross(tangent);
     tangent.normalize();
     bitangent.normalize();
