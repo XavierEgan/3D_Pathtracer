@@ -30,7 +30,7 @@ That's more than one AABB intersection test for every human that has ever lived 
 
 
 ![alt text](Readme_Images/overview_image_2.jpg)
-- **Render Time**: 712.0 seconds (before BVHT)
+- **Render Time**: 712.0 seconds
 - **Resolution**: 2048x2048
 - **Samples**: 16384 rays per pixel
 - **Scene Complexity**: 588 triangles
