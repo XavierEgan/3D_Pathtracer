@@ -129,30 +129,11 @@ public:
     }
 
     __device__ __forceinline__ TriHit getTriIntersection(
-        const DeviceTriBuffer& deviceTriBuffer, 
-        const PixelOptimisationReport& pixelOptimisationReport, 
-        bool cameraRay
+        const DeviceTriBuffer& deviceTriBuffer
         #ifdef REPORT_PERFORMANCE
         , DevicePerformance& devicePerformance
         #endif
     ) const {
-        if (cameraRay && pixelOptimisationReport.isCoherentPixel) {
-            #ifdef REPORT_PERFORMANCE
-            devicePerformance.incrimentRayTriIntersecs();
-            #endif
-            _TriDist closestDist = _TriDist();
-
-            getTriHit(pixelOptimisationReport.coherentTri.coreTri, closestDist);
-
-            return TriHit(
-                origin + direction * closestDist.dist, 
-                closestDist.dist, 
-                Vec3(closestDist.u, closestDist.v, 1 - closestDist.u - closestDist.v),
-                &pixelOptimisationReport.coherentTri,
-                true
-            );
-        }
-
         _TriDist closestDist = _TriDist();
         int closestTriIndex =  -1;
 
@@ -254,15 +235,13 @@ public:
         setDirection((direction - 2*(direction.dot(shiftedTriNormal))*shiftedTriNormal).normalized());
     }
 
-    __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed, Vec3& runningAlbedo) {
+    __device__ void bsdfReflect(const DeviceMaterial& material, const TriHit& triHit, unsigned int& localSeed) {
         Vec3 UV = triHit.tri->getUV(triHit.baryCoords);
 
         Vec3 edge1 = (triHit.tri->coreTri.v1 - triHit.tri->coreTri.v0).normalized();
         Vec3 normalOffset = material.getNormalOffset(UV.x, UV.y);
         Vec3 shiftedTriNormal = getNormalFromOffset(triHit.tri->normal, edge1, normalOffset);
         
-        runningAlbedo *= material.getAlbedo(UV.x, UV.y);
-
         float u1 = randUniform(localSeed);
         float u2 = randUniform(localSeed);
 

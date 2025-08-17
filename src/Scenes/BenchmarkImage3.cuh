@@ -55,27 +55,28 @@ void benchmarkImage3() {
     Camera camera = Camera(
         camOrigin,
         camForward,
-        screenParams
+        screenParams,
+        Vec3::BLACK
     );
 
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 0.2f, false, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 0.2f, 0.0f, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
     HostMesh leftWallMesh = HostMesh::plane(tlb, tlf, blf, blb, leftWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(leftWallMesh);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
     HostMesh backWallMesh = HostMesh::plane(blb, brb, trb, tlb, backWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(backWallMesh);
 
     HostMaterial backWallLightMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 1.0f, 1.0f, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
     );
     MaterialID backWallLightMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallLightMaterial);
     HostMesh backWallLightMesh = HostMesh::plane(
@@ -87,14 +88,14 @@ void benchmarkImage3() {
     hostResourceManager.hostMeshManager.registerMesh(backWallLightMesh);
 
     HostMaterial rightWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3::RED), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3::RED), HostMap(Vec3::BLACK)
     );
     MaterialID rightWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(rightWallMaterial);
     HostMesh rightWallMesh = HostMesh::plane(trb, brb, brf, trf, rightWallMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(rightWallMesh);
 
     HostMaterial roofMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3::MAGENTA), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3::MAGENTA), HostMap(Vec3::BLACK)
     );
     MaterialID roofMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(roofMaterial);
     HostMesh roofMesh = HostMesh::plane(trf, tlf, tlb, trb, roofMaterialID);
@@ -102,28 +103,28 @@ void benchmarkImage3() {
 
 
     HostMaterial floorMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3::YELLOW), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3::YELLOW), HostMap(Vec3::BLACK)
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
     HostMesh floorMesh = HostMesh::plane(brb, blb, blf, brf, floorMaterialID);
     hostResourceManager.hostMeshManager.registerMesh(floorMesh);
 
     HostMaterial wavySphereMaterial = HostMaterial(
-        0.0f, 1.0f, 0.0f, false, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
+        0.0f, 1.0f, 0.0f, 0.0f, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
     );
     MaterialID wavySphereID = hostResourceManager.hostMaterialManager.registerMaterial(wavySphereMaterial);
     HostMesh wavySphereMesh = HostMesh::wavySphere(wavySphereRadii, wavySpherePos, wavySphereID, wavySphereXsquish, wavySphereZsquish, wavySphereSlices, wavySphereStacks);
-    hostResourceManager.hostMeshManager.registerMesh(wavySphereMesh);
+    // hostResourceManager.hostMeshManager.registerMesh(wavySphereMesh);
 
     HostMaterial utahTeapotMaterial = HostMaterial(
-        0.5f, 1.33f, 0.0f, false, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
+        0.5f, 1.33f, 0.0f, 0.0f, HostMap(Vec3::WHITE), HostMap(Vec3::BLACK)
     );
     MaterialID utahTeapotMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(utahTeapotMaterial);
     HostMesh utahTeapotMesh = HostMesh::utahTeapot(utahTeapotPos, utahTeapotScale, utahTeapotMaterialID, utahTeapotRotationDeg);
     hostResourceManager.hostMeshManager.registerMesh(utahTeapotMesh);
 
     HostMaterial tableMaterial = HostMaterial(
-        0.0f, 1.0f, 0.6f, false, HostMap("../Maps/Textures/bark_willow_02_diff_4k.png"), HostMap("../Maps/Normal/bark_willow_02_nor_gl_4k.png")
+        0.0f, 1.0f, 0.6f, 0.0f, HostMap("../Maps/Textures/bark_willow_02_diff_4k.png"), HostMap("../Maps/Normal/bark_willow_02_nor_gl_4k.png")
     );
     MaterialID tableMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(tableMaterial);
     HostMesh tableMesh = HostMesh::plane(
@@ -138,7 +139,7 @@ void benchmarkImage3() {
 
 
     HostMaterial icoMaterial = HostMaterial(
-        0.5f, 1.33f, 0.0f, false, HostMap(Vec3::YELLOW), HostMap(Vec3::BLACK)
+        0.5f, 1.33f, 0.0f, 0.0f, HostMap(Vec3::YELLOW), HostMap(Vec3::BLACK)
     );
     MaterialID icoMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(icoMaterial);
     HostMesh icoMesh = HostMesh::icosahedron(icoSize, icoPos, icoMaterialID);

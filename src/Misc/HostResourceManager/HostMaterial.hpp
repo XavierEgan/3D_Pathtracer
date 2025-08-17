@@ -10,8 +10,7 @@ class HostMaterial {
     float transmission;
     float IOR;
     float roughness;
-
-    bool lightSource;
+    float emission;
 
     HostMap textureMap;
     HostMap normalMap;
@@ -22,8 +21,7 @@ public:
         float transmission,
         float IOR,
         float roughness,
-
-        bool lightSource,
+        float emission,
 
         HostMap textureMap,
         HostMap normalMap
@@ -31,8 +29,7 @@ public:
         transmission(transmission),
         IOR(IOR),
         roughness(roughness),
-
-        lightSource(lightSource),
+        emission(emission),
 
         textureMap(textureMap),
         normalMap(normalMap)
@@ -48,8 +45,8 @@ public:
         return roughness;
     }
 
-    bool getLightSource() const {
-        return lightSource;
+    float getEmission() const {
+        return emission;
     }
 
     const HostMap& getTextureMap() const {

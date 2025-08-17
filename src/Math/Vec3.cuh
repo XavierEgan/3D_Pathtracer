@@ -230,6 +230,11 @@ struct Vec3 {
         return *this + dir * EPSILON;
     }
 
+    __host__ __device__ constexpr Vec3 clamp(float min, float max) const {
+        // dir should be normalised
+        return Vec3(fmaxf(fminf(x, max), min), fmaxf(fminf(y, max), min), fmaxf(fminf(z, max), min));
+    }
+
     static const Vec3 FORWARD;
     static const Vec3 BACK;
     static const Vec3 LEFT;
