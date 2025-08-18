@@ -20,13 +20,13 @@ void benchmarkImage3() {
     trb = Vec3(1.0f, 1.0f, 1.0f); // top right back corner
     brb = Vec3(1.0f, -1.0f, 1.0f); // bottom right back corner
 
-    const unsigned int width = 2048/8;//4096
-    const unsigned int height = 2048/8;
+    const unsigned int width = 2048/2;//4096
+    const unsigned int height = 2048/2;
     const float verticalFov = 60 * (3.1415f/180);
     const float horizontalFov = 60 * (3.1415f/180);
     const float focalLength = 1.0f;
-    const unsigned int rayPerPixel = 128 * 1;
-    const unsigned int maxBounces = 16;
+    const unsigned int rayPerPixel = 128 * 64;
+    const unsigned int maxBounces = 4;
     Vec3 camOrigin = Vec3(-.5,-.2,1);
     Vec3 camForward = Vec3(.5,-.1,-1);
 

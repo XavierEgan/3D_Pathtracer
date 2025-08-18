@@ -69,10 +69,10 @@ __global__ void getPixelColorKernal(
             Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
             Vec3 triAlbedo = triMaterial.getAlbedo(triUV.x, triUV.y);
 
+            float temp = accumulatedRayColor.x;
+
             runningAlbedo *= triAlbedo;
             accumulatedRayColor += runningAlbedo * triMaterial.emission;
-
-            if (triMaterial.emission > 0) break;
             
             // reflect the ray and update
             activeRay.bsdfReflect(triMaterial, triHit, seed);

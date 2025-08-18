@@ -31,6 +31,11 @@ public:
             printf("Out of range write (height)\n");
             return;
         }
+        if (data.x > 1.0f || data.y > 1.0f || data.z > 1.0f) {
+            data.print("data to write too big: ");
+            return;
+        }
+
         #endif
 
         this->data[y * width * 3 + x * 3] = (char)(data.x * 255);

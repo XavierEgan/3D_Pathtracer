@@ -48,7 +48,7 @@ void benchmarkImage1() {
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, 3.0f, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.2f, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
