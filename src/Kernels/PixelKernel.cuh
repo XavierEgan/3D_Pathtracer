@@ -7,66 +7,6 @@
 #include "../Misc/HostResourceManager/HostResourceManager.hpp"
 #include "../Misc/PixelOptimisationReport.cuh"
 
-__device__ PixelOptimisationReport pixelOptimisationsCheck(
-    const DeviceTriBuffer& deviceTriBuffer, 
-    const Camera& camera, 
-    unsigned int planeX, 
-    unsigned int planeY, 
-    unsigned int& seed
-    #ifdef REPORT_PERFORMANCE
-    , DevicePerformance devicePerformance
-    #endif
-) {
-    float subPixelOffsetX, subPixelOffsetY;
-    int missedRayCount = 0;
-
-    const Tri* referenceTriPointer = nullptr;
-
-    TriHit triHit;
-
-    bool coherentTri = true;
-
-    PixelOptimisationReport dummyReport = PixelOptimisationReport(false, false, Tri());
-
-    #pragma unroll 3
-    for (int x=0; x < 3; x++) {
-        for (int y=0; y < 3; y++) {
-            subPixelOffsetX = x * .5;
-            subPixelOffsetY = y * .5;
-            Ray ray = Ray(planeX, planeY, subPixelOffsetX, subPixelOffsetY, camera);
-
-            triHit = ray.getTriIntersection(
-                deviceTriBuffer, 
-                dummyReport, 
-                false
-                #ifdef REPORT_PERFORMANCE
-                , devicePerformance
-                #endif
-            );
-
-            if (x==0 && y==0) {
-                if (triHit.hit) {
-                    referenceTriPointer = triHit.tri;
-                } else {
-                    coherentTri = false;
-                }
-            }
-
-            if (coherentTri) {
-                coherentTri = referenceTriPointer == triHit.tri;
-            }
-
-            missedRayCount += !triHit.hit;
-        }
-    }
-
-    return PixelOptimisationReport(
-        missedRayCount == 9,
-        coherentTri,
-        *referenceTriPointer
-    );
-}
-
 __global__ void getPixelColorKernal(
     DeviceMaterialManager* deviceMaterialManagerPointer, 
     DeviceTriBuffer* deviceTriBufferPointer, 
@@ -95,86 +35,68 @@ __global__ void getPixelColorKernal(
     
     unsigned int seed = 12345 * x * y;
 
-    PixelOptimisationReport pixelOptimisationReport = pixelOptimisationsCheck(
-        deviceTriBuffer, 
-        camera, 
-        x, 
-        y, 
-        seed
-        #ifdef REPORT_PERFORMANCE
-        , devicePerformance
-        #endif
-    );
-
-    if (pixelOptimisationReport.isBlankPixel) {
-        deviceScreenBuffer.write(Vec3(), x, y);
-        return;
-    }
-
-    Vec3 runningPixelColor = Vec3(0.0f, 0.0f, 0.0f);
+    Vec3 runningPixelColor = Vec3::BLACK;
     #ifdef UNROLL_RAYPPLOOP
         #pragma unroll UNROLL_RAYPPLOOP
     #endif
     for (size_t r = 0; r < camera.screenParams.rayPerPixel; r++) {
-        Vec3 runningAlbedo = Vec3(1.0f, 1.0f, 1.0f);
-
         // get the ray from the camera but slightly nudged
         Ray activeRay = Ray(x, y, camera, seed);
         
         size_t numBounces = 0;
 
-        Vec3 lightSource = Vec3();
-        for (size_t i = 0; i < camera.screenParams.maxBounces; i++) {
+        Vec3 accumulatedRayColor = Vec3::BLACK;
+        Vec3 runningAlbedo = Vec3::WHITE;
+
+        while (true) {
             // check if the ray hits any triangles
-            bool cameraRay = i == 0;
             TriHit triHit = activeRay.getTriIntersection(
-                deviceTriBuffer, 
-                pixelOptimisationReport, 
-                cameraRay
+                deviceTriBuffer
                 #ifdef REPORT_PERFORMANCE
                 , devicePerformance
                 #endif
             );
-
+            
             if (!triHit.hit) {
-                // we didnt hit anything which means we are done
-                //printf("No Hit\n");
                 break;
             }
 
             // we have a hit!
             // get the tris material
+
             DeviceMaterial& triMaterial = deviceMaterialManager.getMaterial(triHit.tri->materialID);
 
-            if (triMaterial.lightSource) {
-                Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
-                lightSource = triMaterial.getAlbedo(triUV.x, triUV.y);
-                //lightSource.print("lightSource");
+            Vec3 triUV = triHit.tri->getUV(triHit.baryCoords);
+            Vec3 triAlbedo = triMaterial.getAlbedo(triUV.x, triUV.y);
+
+            float temp = accumulatedRayColor.x;
+
+            runningAlbedo *= triAlbedo;
+            accumulatedRayColor += runningAlbedo * triMaterial.emission;
+            
+            // reflect the ray and update
+            activeRay.bsdfReflect(triMaterial, triHit, seed);
+
+            numBounces++;
+            
+            if (numBounces > camera.screenParams.maxBounces) {
                 break;
             }
-
-            // reflect the ray and update runningAlbedo and runningEmission
-            activeRay.bsdfReflect(triMaterial, triHit, seed, runningAlbedo);
-
-            if (runningAlbedo.lengthSquared() < 0.01f) {
-                break; // ray contribution too small to matter
-            }
-            
-            numBounces++;
         }
 
         #ifdef REPORT_PERFORMANCE
         devicePerformance.incrimentRayTraces();
         #endif
 
-        Vec3 finalColor = runningAlbedo * lightSource;
-        runningPixelColor += finalColor;
+        runningPixelColor += accumulatedRayColor;
     }
     
     Vec3 color = (runningPixelColor / camera.screenParams.rayPerPixel);
     #ifdef GAMMA_CORRECTION
     color = Vec3(powf(color.x, 1/2.2), powf(color.y, 1/2.2), powf(color.z, 1/2.2));
     #endif
+
+    color.clamp(0.0f, 1.0f);
 
     deviceScreenBuffer.write(color, x, y);
 }

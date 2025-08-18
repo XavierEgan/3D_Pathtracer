@@ -26,7 +26,7 @@ void benchmarkImage1() {
     const float horizontalFov = 90 * (3.1415f/180);
     const float focalLength = 1.0f;
     const unsigned int rayPerPixel = 128 * 64;
-    const unsigned int maxBounces = 32;
+    const unsigned int maxBounces = 4;
 
     ScreenParams screenParams = ScreenParams(width, height, verticalFov, horizontalFov, focalLength, rayPerPixel, maxBounces);
 
@@ -36,38 +36,39 @@ void benchmarkImage1() {
     Camera camera = Camera(
         camOrigin,
         camForward,
-        screenParams
+        screenParams,
+        Vec3::BLACK
     );
 
     HostResourceManager hostResourceManager = HostResourceManager();
     
     HostMaterial leftWallMaterial = HostMaterial(
-        0.0f, 1.0f, 0.7f, false, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3())
+        0.0f, 1.0f, 0.7f, 0.0f, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3())
     );
     MaterialID leftWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(leftWallMaterial);
 
     HostMaterial backWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, true, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.2f, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID backWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(backWallMaterial);
 
     HostMaterial rightWallMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3(1.0f, 0.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID rightWallMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(rightWallMaterial);
 
     HostMaterial roofMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3(1.0f, 0.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID roofMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(roofMaterial);
 
     HostMaterial floorMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3(1.0f, 1.0f, 0.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID floorMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(floorMaterial);
 
     HostMaterial randMaterial = HostMaterial(
-        0.0f, 1.0f, 1.0f, false, HostMap(Vec3(1.0f, 1.0f, .9f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
+        0.0f, 1.0f, 1.0f, 0.0f, HostMap(Vec3(1.0f, 1.0f, 1.0f)), HostMap(Vec3(0.0f, 0.0f, 0.0f))
     );
     MaterialID randMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(randMaterial);
 
@@ -89,7 +90,7 @@ void benchmarkImage1() {
     unsigned int seed = 0;
 
     HostMesh randMesh = HostMesh::randomMesh(-.5, .5, 20, seed, randMaterialID);
-    hostResourceManager.hostMeshManager.registerMesh(randMesh);
+    //hostResourceManager.hostMeshManager.registerMesh(randMesh);
     
     Pathtracer pathtracer = Pathtracer(hostResourceManager, camera);
 

@@ -45,7 +45,8 @@ void benchmarkImage2() {
     Camera camera = Camera(
         camOrigin,
         camForward,
-        screenParams
+        screenParams,
+        Vec3::BLACK
     );
 
     HostResourceManager hostResourceManager = HostResourceManager();

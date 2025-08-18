@@ -61,9 +61,11 @@ struct Camera {
 
     Vec3 precomputedForwardComponent;
 
+    Vec3 backgroundColor;
+
     ScreenParams screenParams;
 
-    Camera(Vec3 pos, Vec3 forward, ScreenParams screenParams) : pos(pos), forward(forward.normalized()), screenParams(screenParams) {
+    Camera(Vec3 pos, Vec3 forward, ScreenParams screenParams, Vec3 backgroundColor) : pos(pos), forward(forward.normalized()), screenParams(screenParams), backgroundColor(backgroundColor) {
         // right is the same as the cross product between the forward vector and the forward vector shifted up a lil 
         right = (this->forward.cross(forward + Vec3(0,.1,0))).normalized();
 

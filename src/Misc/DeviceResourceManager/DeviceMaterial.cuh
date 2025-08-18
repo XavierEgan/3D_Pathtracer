@@ -12,8 +12,7 @@ public:
     float transmission;
     float IOR;
     float roughness;
-
-    bool lightSource;
+    float emission;
 
     unsigned char* textureMapData;
     unsigned int textureMapWidth;
@@ -30,7 +29,7 @@ public:
         transmission(hostMaterial.getTransmission()),
         IOR(hostMaterial.getIOR()),
         roughness(hostMaterial.getRoughness()),
-        lightSource(hostMaterial.getLightSource()),
+        emission(hostMaterial.getEmission()),
         textureMapData(nullptr),
         textureMapWidth(hostMaterial.getTextureMap().getWidth()),
         textureMapHeight(hostMaterial.getTextureMap().getHeight()),
