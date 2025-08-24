@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
-#include "../HostResourceManager/HostMaterial.hpp"
+#include "Math/Tri.cuh"
+#include "Misc/HostResourceManager/HostMaterial.hpp"
 
 /*
 Contains data of material properties and color

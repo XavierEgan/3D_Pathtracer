@@ -9,9 +9,9 @@
 #include <optional>
 #include <cstdlib>
 
-#include "Vec3.cuh"
-#include "Tri.cuh"
-#include "Rand.cuh"
+#include "Math/Vec3.cuh"
+#include "Math/Tri.cuh"
+#include "Math/Rand.cuh"
 
 struct Transform3D {
     Vec3 i, j, k, origin;

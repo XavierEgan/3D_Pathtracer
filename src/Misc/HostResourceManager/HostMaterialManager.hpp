@@ -2,8 +2,8 @@
 
 #include <vector>
 
-#include "../MaterialID.hpp"
-#include "HostMaterial.hpp"
+#include "Misc/MaterialID.hpp"
+#include "Misc/HostResourceManager/HostMaterial.hpp"
 
 class HostMaterialManager {
     std::vector<HostMaterial> materials;

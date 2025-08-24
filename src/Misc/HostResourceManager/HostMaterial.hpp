@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "HostMap.hpp"
+#include "Misc/HostResourceManager/HostMap.hpp"
 
 /*
 Contains data of material properties and color

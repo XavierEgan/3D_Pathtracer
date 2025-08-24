@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Math/Tri.cuh"
+#include "Math/Tri.cuh"
 #include <vector>
 
 struct TriBuffer {

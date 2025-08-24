@@ -1,5 +1,5 @@
 #include "TestFramework.hpp"
-#include "../src/Math/Ray.hpp"
+#include "src/Math/Ray.hpp"
 
 /*
 These tests are pretty bad tbh since they only check integers and all the values of x,y,z are the same

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "HostMesh.hpp"
+#include "Misc/HostResourceManager/HostMesh.hpp"
 
 class HostMeshManager {
     std::vector<HostMesh> meshs;

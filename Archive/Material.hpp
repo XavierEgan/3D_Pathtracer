@@ -2,7 +2,7 @@
 
 #include <type_traits>
 
-#include "../Math/Vec3.cuh"
+#include "Math/Vec3.cuh"
 #include "Map.cuh"
 
 struct Material {

@@ -8,8 +8,8 @@
 #include <iostream>
 #include <type_traits>
 
-#include "Vec3.cuh"
-#include "..\Misc\MaterialID.hpp"
+#include "Math/Vec3.cuh"
+#include "Misc/MaterialID.hpp"
 
 struct AABB {
     Vec3 min;

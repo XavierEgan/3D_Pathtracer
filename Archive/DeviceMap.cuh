@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
-#include "../HostResourceManager/HostMap.hpp"
+#include "Math/Tri.cuh"
+#include "Misc/HostResourceManager/HostMap.hpp"
 
 class DeviceMap {
     unsigned char* mapData;

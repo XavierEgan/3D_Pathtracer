@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Pathtracer.cuh"
+#include "Pathtracer.cuh"
 
 void benchmarkImage2() {
     Vec3 
@@ -107,7 +107,7 @@ void benchmarkImage2() {
     hostResourceManager.hostMeshManager.registerMesh(utahTeapotMesh);
 
     HostMaterial tableMaterial = HostMaterial(
-        0.0f, 1.0f, 0.6f, false, HostMap("../Maps/Textures/bark_willow_02_diff_4k.png"), HostMap("../Maps/Normal/bark_willow_02_nor_gl_4k.png")
+        0.0f, 1.0f, 0.6f, false, HostMap("Maps/Textures/bark_willow_02_diff_4k.png"), HostMap("Maps/Normal/bark_willow_02_nor_gl_4k.png")
     );
     MaterialID tableMaterialID = hostResourceManager.hostMaterialManager.registerMaterial(tableMaterial);
     HostMesh tableMesh = HostMesh::plane(

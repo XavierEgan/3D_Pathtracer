@@ -2,7 +2,7 @@
 
 #include "Camera.hpp"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../Ext/stb_image_write.h"
+#include "Ext/stb_image_write.h"
 
 struct ScreenBuffer {
     char* data;

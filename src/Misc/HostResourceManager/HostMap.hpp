@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
+#include "Math/Tri.cuh"
 
 #include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../Ext/stb_image.h"
+#include "Ext/stb_image.h"
 
 class HostMap {
     std::vector<unsigned char> mapData;
@@ -35,7 +35,7 @@ public:
             }
 
             // load the texture not found image
-            const char* imageNotFoundTexture = "../src/Textures/notLoadedTexture.png";
+            const char* imageNotFoundTexture = "src/Textures/notLoadedTexture.png";
             data = stbi_load(imageNotFoundTexture, &mapWidth, &mapHeight, &channels, 0);
         }
 

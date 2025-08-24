@@ -3,7 +3,7 @@
 #include <cmath>
 #include <type_traits>
 
-#include "../Math/Vec3.cuh"
+#include "Math/Vec3.cuh"
 
 struct ScreenParams {
     unsigned int width;

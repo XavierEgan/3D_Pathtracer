@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "HostMaterialManager.hpp"
-#include "HostMeshManager.hpp"
+#include "Misc/HostResourceManager/HostMaterialManager.hpp"
+#include "Misc/HostResourceManager/HostMeshManager.hpp"
 
 class HostResourceManager {
 public:

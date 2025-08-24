@@ -1,8 +1,8 @@
 #pragma once
 
 #include <vector>
-#include "../Math/Tri.cuh"
-#include "../HostResourceManager/HostMeshManager.hpp"
+#include "Math/Tri.cuh"
+#include "Misc/HostResourceManager/HostMeshManager.hpp"
 
 class DeviceTriBuffer {
     Tri* tris;

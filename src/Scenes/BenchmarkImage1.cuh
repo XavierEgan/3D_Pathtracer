@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Pathtracer.cuh"
+#include "Pathtracer.cuh"
 
 void benchmarkImage1() {
     Vec3 

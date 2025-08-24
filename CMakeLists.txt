@@ -17,8 +17,6 @@ project(
     LANGUAGES CXX CUDA
 )
 
-string(APPEND CMAKE_CUDA_FLAGS_RELEASE " -use_fast_math")
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CUDA_STANDARD 17)
@@ -30,9 +28,16 @@ set(CMAKE_CUDA_STANDARD_REQUIRED ON)
 
 find_package(CUDAToolkit REQUIRED)
 
+file(GLOB_RECURSE SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cu"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cuh"
+)
+
 add_executable(
     d
-    src/main.cu
+    ${SOURCES}
 )
 
 set_property(TARGET d PROPERTY CUDA_SEPARABLE_COMPILATION ON)
@@ -42,18 +47,14 @@ target_compile_options(d PRIVATE
     $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CONFIG:Debug>>:-G -g>
 )
 
-target_include_directories(
-    d
-    PRIVATE 
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Math
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Misc
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Ext
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Kernels
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/Scenes
+target_include_directories(d
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 target_link_libraries(d CUDA::cudart)
 
+# message(STATUS "CMAKE_SRC_DIR: ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_CXX_FLAGS_DEBUG: ${CMAKE_CXX_FLAGS_DEBUG}")
 message(STATUS "CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")

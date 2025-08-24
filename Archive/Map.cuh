@@ -1,9 +1,9 @@
 #pragma once
 
 #include <type_traits>
-#include "../Math/Vec3.cuh"
+#include "Math/Vec3.cuh"
 
-#include "../Ext/stb_image.h"
+#include "Ext/stb_image.h"
 #define STB_IMAGE_IMPLEMENTATION
 
 struct Map {

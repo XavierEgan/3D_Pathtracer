@@ -10,8 +10,8 @@
 
 #include "Math/Ray.cuh"
 #include "Math/Rand.cuh"
-#include "HostResourceManager/HostMaterialManager.hpp"
-#include "Camera.hpp"
+#include "Misc/HostResourceManager/HostMaterialManager.hpp"
+#include "Misc/Camera.hpp"
 #include "Kernels/PixelKernel.cuh"
 
 struct Pathtracer {

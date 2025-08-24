@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "../Math/Tri.cuh"
+#include "Math/Tri.cuh"
 
 struct Mesh {
     std::vector<Tri> tris;

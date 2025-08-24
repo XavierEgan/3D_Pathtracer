@@ -13,14 +13,14 @@
 #include "Tri.cuh"
 #include "Rand.cuh"
 
-#include "../Misc/Camera.hpp"
+#include "Misc/Camera.hpp"
 
-#include "../Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
-#include "../Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
-#include "../Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
-#include "../Misc/DeviceResourceManager/DevicePerformance.cuh"
-#include "../Misc/HostResourceManager/HostResourceManager.hpp"
-#include "../Misc/PixelOptimisationReport.cuh"
+#include "Misc/DeviceResourceManager/DeviceMaterialManager.cuh"
+#include "Misc/DeviceResourceManager/DeviceScreenBuffer.cuh"
+#include "Misc/DeviceResourceManager/DeviceTriBuffer.cuh"
+#include "Misc/DeviceResourceManager/DevicePerformance.cuh"
+#include "Misc/HostResourceManager/HostResourceManager.hpp"
+#include "Misc/PixelOptimisationReport.cuh"
 
 struct TriHit {
     Vec3 intersecPoint;

@@ -2,10 +2,10 @@
 
 #include <vector>
 
-#include "../MaterialID.hpp"
-#include "../Math/Tri.cuh"
-#include "DeviceMaterial.cuh"
-#include "../HostResourceManager/HostMaterialManager.hpp"
+#include "Misc/MaterialID.hpp"
+#include "Math/Tri.cuh"
+#include "Misc/DeviceResourceManager/DeviceMaterial.cuh"
+#include "Misc/HostResourceManager/HostMaterialManager.hpp"
 
 class DeviceMaterialManager {
     DeviceMaterial* materials;

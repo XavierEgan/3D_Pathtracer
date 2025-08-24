@@ -1,5 +1,5 @@
 #pragma once
-#include "../Math/Tri.cuh"
+#include "Math/Tri.cuh"
 
 struct PixelOptimisationReport {
     bool isBlankPixel;

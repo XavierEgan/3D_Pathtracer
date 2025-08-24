@@ -1,6 +1,6 @@
 #include "TestFramework.hpp"
-#include "../src/Math/Vec3.hpp"
-#include "../src/Math/Tri.hpp"
+#include "src/Math/Vec3.hpp"
+#include "src/Math/Tri.hpp"
 
 /*
 These tests are pretty bad tbh since they only check integers and all the values of x,y,z are the same

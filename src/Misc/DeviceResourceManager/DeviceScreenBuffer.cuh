@@ -1,9 +1,9 @@
 #pragma once
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../../Ext/stb_image_write.h"
-#include "../../Math/Vec3.cuh"
-#include "../Camera.hpp"
+#include "Ext/stb_image_write.h"
+#include "Math/Vec3.cuh"
+#include "Misc/Camera.hpp"
 
 class DeviceScreenBuffer {
     unsigned char* data;

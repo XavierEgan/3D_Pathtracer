@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Camera.hpp"
+#include "Misc/Camera.hpp"
 
 struct PixelPerformance {
     long long AABBIntersecs;

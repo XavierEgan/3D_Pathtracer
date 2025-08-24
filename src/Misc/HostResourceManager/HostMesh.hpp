@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "../../Math/Tri.cuh"
+#include "Math/Tri.cuh"
 
 #include "MeshStuff/teapot.hpp"
 
